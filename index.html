@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>江城往事 — 解码武汉1800年历史</title>
+<style>
+/* ============================================================
+   RESET & BASE — 淡雅宣纸风格
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#FAF0E6; --paper-dark:#E8DCC8; --ink:#3C2F28; --ink-light:#6B5D4F; --ink-faint:#A89880;
+  --water:#B0E0E6; --water-dark:#8CC5CF;
+  --route-kb:#8B4513; --route-sy:#C75B39; --route-hy:#708090; --route-gc:#5F9EA0;
+  --gold:#B8860B; --success:#5B8C5A; --accent:#D4A574;
+  --header-h:44px; --tab-h:48px; --bottom-h:60px; --radius:12px;
+  --font-display:"Noto Serif SC","STSong","SimSun","Songti SC",serif;
+  --font-body:"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+}
+html,body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:var(--font-body);color:var(--ink);background:var(--paper);
+  -webkit-tap-highlight-color:transparent;
+}
+button{border:none;cursor:pointer;font-family:inherit;color:inherit;background:none}
+input{font-family:inherit;border:none;outline:none;background:none;color:inherit}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--ink-faint);border-radius:2px}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+#header{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);
+  display:flex;align-items:center;padding:0 14px;gap:10px;
+  background:linear-gradient(180deg,rgba(250,240,230,.98),rgba(250,240,230,.88));
+  backdrop-filter:blur(12px);border-bottom:1px solid rgba(139,69,19,.12);
+}
+.header-title{
+  font-family:var(--font-display);font-size:18px;font-weight:700;letter-spacing:2px;
+  color:var(--ink);white-space:nowrap;
+}
+.header-sub{font-size:11px;color:var(--ink-light);white-space:nowrap;font-family:var(--font-display)}
+.header-progress{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-light)}
+.header-progress strong{color:var(--gold);font-size:16px;font-family:var(--font-display)}
+.header-progress-bar{width:52px;height:5px;background:var(--paper-dark);border-radius:3px;overflow:hidden}
+.header-progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--route-sy),var(--gold));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ============================================================
+   ROUTE TABS
+   ============================================================ */
+#routeTabs{
+  position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--tab-h);
+  display:flex;align-items:center;gap:6px;padding:0 10px;
+  background:linear-gradient(180deg,rgba(250,240,230,.96),rgba(250,240,230,.84));
+  backdrop-filter:blur(12px);overflow-x:auto;overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.tab-btn{
+  flex-shrink:0;display:flex;align-items:center;gap:5px;padding:8px 14px;
+  border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px;
+  background:rgba(0,0,0,.04);color:var(--ink-light);
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  border:1.5px solid transparent;white-space:nowrap;
+  font-family:var(--font-display);
+}
+.tab-btn .tab-icon{font-size:14px;transition:transform .3s}
+.tab-btn .tab-count{font-size:10px;opacity:.7}
+.tab-btn:hover{background:rgba(0,0,0,.07);color:var(--ink)}
+.tab-btn.active{color:#fff!important;border-color:var(--route-color);background:var(--route-color)!important;box-shadow:0 2px 12px var(--route-glow)}
+.tab-btn.active .tab-icon{transform:scale(1.25)}
+.tab-btn.route-kb{--route-color:var(--route-kb);--route-glow:rgba(139,69,19,.3)}
+.tab-btn.route-sy{--route-color:var(--route-sy);--route-glow:rgba(199,91,57,.3)}
+.tab-btn.route-hy{--route-color:var(--route-hy);--route-glow:rgba(112,128,144,.3)}
+.tab-btn.route-gc{--route-color:var(--route-gc);--route-glow:rgba(95,158,160,.3)}
+
+/* ============================================================
+   MAP CONTAINER
+   ============================================================ */
+#mapContainer{
+  position:fixed;top:calc(var(--header-h) + var(--tab-h));left:0;right:0;bottom:var(--bottom-h);
+  background:var(--paper);
+}
+#amap{width:100%;height:100%}
+
+/* 自定义标记样式（HTML content） */
+.history-pin{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:Georgia,'Times New Roman',serif;font-weight:900;
+  font-size:13px;color:#fff;cursor:pointer;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
+  position:relative;user-select:none;
+}
+.history-pin::after{
+  content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;
+  border-top:6px solid inherit;
+}
+.history-pin:hover{transform:scale(1.35);z-index:999}
+.history-pin.locked{background:#B8A898!important;border:2px solid #ccc!important;box-shadow:none!important}
+.history-pin.unlocked{box-shadow:0 0 12px currentColor;animation:pin-glow 2.5s ease-in-out infinite}
+@keyframes pin-glow{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 16px currentColor,0 0 24px currentColor}}
+
+/* 地图信息窗 */
+.amap-info-content{padding:0!important;background:transparent!important;border:none!important;box-shadow:none!important}
+.custom-info{
+  background:rgba(255,252,245,.96);backdrop-filter:blur(20px);padding:14px 17px;
+  border-radius:14px;color:var(--ink);min-width:190px;
+  border:1px solid rgba(139,69,19,.2);box-shadow:0 4px 24px rgba(0,0,0,.08);
+  font-family:var(--font-display);
+}
+.custom-info .ci-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.custom-info .ci-year{font-size:12px;color:var(--ink-light);margin-bottom:5px}
+.custom-info .ci-btn{
+  display:inline-block;padding:7px 18px;border-radius:10px;font-size:12px;font-weight:700;
+  color:#fff;cursor:pointer;transition:all .25s;
+  font-family:var(--font-display);margin-top:6px;
+}
+.custom-info .ci-btn:hover{transform:scale(1.04);opacity:.9}
+.custom-info .ci-btn.unlocked{background:var(--success)!important}
+
+/* ============================================================
+   DETAIL OVERLAY + CARD
+   ============================================================ */
+#detailOverlay{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.35);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
+}
+#detailOverlay.show{opacity:1;visibility:visible}
+#detailCard{
+  width:100%;max-width:500px;max-height:92vh;overflow-y:auto;overflow-x:hidden;
+  background:linear-gradient(180deg,#FFFCF5,#FAF0E6);
+  border-radius:20px 20px 0 0;border-top:3px solid var(--route-color,var(--ink));
+  box-shadow:0 -6px 32px rgba(0,0,0,.1);transition:transform .4s cubic-bezier(.4,0,.2,1);
+  transform:translateY(20px);
+}
+#detailOverlay.show #detailCard{transform:translateY(0)}
+
+.card-color-bar{height:5px;background:var(--route-color,var(--ink))}
+.card-header{padding:20px 20px 10px;display:flex;align-items:flex-start;gap:14px}
+.card-num{
+  font-family:var(--font-display);font-size:30px;font-weight:900;
+  color:var(--route-color,var(--ink));opacity:.5;line-height:1;min-width:44px;
+}
+.card-info{flex:1}
+.card-name{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:1px;color:var(--ink)}
+.card-year{font-size:13px;color:var(--ink-light);margin-top:2px;font-family:var(--font-display)}
+.card-close{
+  width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.06);
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  color:var(--ink-light);transition:all .2s;flex-shrink:0;
+}
+.card-close:hover{background:rgba(0,0,0,.12);color:var(--ink)}
+
+.card-body{padding:0 20px 20px}
+.card-desc{font-size:13px;line-height:1.8;color:var(--ink-light);margin-bottom:12px;font-family:var(--font-display)}
+
+/* === 老照片卡片区 === */
+.photo-card-title{
+  font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--ink);
+  margin-bottom:10px;display:flex;align-items:center;gap:6px;
+}
+.photo-card-title span{font-size:16px}
+
+/* 双图对比区 */
+.photo-dual{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;
+}
+.photo-box{
+  position:relative;padding-top:75%;border-radius:10px;overflow:hidden;
+  border:1px solid rgba(0,0,0,.08);cursor:default;
+}
+.photo-box-inner{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:10px;
+}
+.photo-box-old .photo-box-inner{
+  background:linear-gradient(135deg,#D4C5B2,#C4B5A2);
+}
+.photo-box-now .photo-box-inner{
+  background:linear-gradient(135deg,#C8D8C8,#B8C8B8);
+}
+.photo-box-emoji{font-size:36px;opacity:.5}
+.photo-box-label{
+  font-size:10px;font-weight:700;letter-spacing:1px;font-family:var(--font-display);
+  padding:3px 10px;border-radius:8px;
+}
+.photo-box-old .photo-box-label{background:rgba(139,69,19,.15);color:var(--route-kb)}
+.photo-box-now .photo-box-label{background:rgba(91,140,90,.15);color:var(--success)}
+.photo-box-img{
+  position:absolute;inset:0;background-size:cover;background-position:center;
+  transition:filter 2s ease;
+}
+.photo-box-img.blurred{filter:blur(8px) sepia(.5)}
+.photo-box-img.clearing{filter:blur(3px) sepia(.3)}
+.photo-box-img.clear{filter:blur(0) sepia(0)}
+
+/* 对比滑块 */
+.compare-slider-wrap{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 4px;
+}
+.compare-slider-wrap span{
+  font-size:11px;color:var(--ink-light);font-family:var(--font-display);flex-shrink:0;
+}
+.compare-slider{
+  -webkit-appearance:none;flex:1;height:5px;border-radius:3px;
+  background:linear-gradient(90deg,#D4C5B2,var(--route-gc));outline:none;
+}
+.compare-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;
+  background:var(--ink);cursor:pointer;border:2px solid var(--paper);
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+
+/* 任务卡片 */
+.card-task-box{
+  padding:12px 14px;border-radius:var(--radius);background:rgba(0,0,0,.03);
+  margin-bottom:12px;font-size:13px;display:flex;align-items:flex-start;gap:10px;
+}
+.card-task-box .task-icon{font-size:18px;flex-shrink:0}
+.card-task-box .task-text{color:var(--ink);font-family:var(--font-display);line-height:1.5}
+
+/* 解锁区 */
+.unlock-section{padding:12px 14px;border-radius:var(--radius);background:rgba(0,0,0,.03);margin-top:4px}
+.unlock-section h4{font-family:var(--font-display);font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.unlock-steps{list-style:none}
+.unlock-steps li{font-size:12px;color:var(--ink-light);padding:3px 0;padding-left:18px;position:relative}
+.unlock-steps li::before{content:'▸';position:absolute;left:0;top:3px;font-size:10px;color:var(--route-color,var(--ink))}
+.btn-unlock{
+  display:block;width:100%;margin-top:10px;padding:12px;border-radius:var(--radius);
+  font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:1px;
+  color:#fff;background:var(--route-color,var(--ink));
+  transition:all .3s;text-align:center;
+}
+.btn-unlock:hover{opacity:.9;transform:translateY(-1px)}
+.btn-unlock:active{transform:scale(.97)}
+.btn-unlock.success{background:var(--success)!important}
+.btn-unlock:disabled{opacity:.6;pointer-events:none}
+
+/* ============================================================
+   BOTTOM BAR
+   ============================================================ */
+#bottomBar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;height:var(--bottom-h);
+  display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:linear-gradient(0deg,rgba(250,240,230,.98),rgba(250,240,230,.88));
+  backdrop-filter:blur(12px);border-top:1px solid rgba(139,69,19,.1);
+}
+.bottom-progress{font-size:11px;color:var(--ink-light);white-space:nowrap;font-family:var(--font-display)}
+.bottom-progress strong{color:var(--route-color,var(--ink))}
+.bottom-recent{display:flex;align-items:center;gap:6px;flex:1;overflow:hidden}
+.bottom-recent-item{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;transition:all .3s;
+  background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.06);
+}
+.bottom-recent-item.placeholder{opacity:.3}
+.btn-all-routes{
+  flex-shrink:0;padding:7px 14px;border-radius:16px;font-size:11px;font-weight:700;letter-spacing:1px;
+  background:rgba(139,69,19,.08);color:var(--route-kb);border:1px solid rgba(139,69,19,.2);
+  transition:all .3s;white-space:nowrap;font-family:var(--font-display);
+}
+.btn-all-routes:hover{background:rgba(139,69,19,.15);transform:translateY(-1px)}
+.btn-all-routes.active{background:var(--route-kb);color:#fff;border-color:var(--route-kb)}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+#toast{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);z-index:500;
+  padding:16px 26px;border-radius:18px;background:rgba(60,47,40,.94);
+  text-align:center;color:#fff;pointer-events:none;opacity:0;
+  transition:all .4s cubic-bezier(.34,1.56,.64,1);
+  font-family:var(--font-display);font-size:15px;font-weight:700;
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+}
+#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#toast .toast-emoji{font-size:32px;display:block}
+#toast .toast-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:4px;font-weight:400}
+
+/* ============================================================
+   LOADING
+   ============================================================ */
+#loadingScreen{
+  position:fixed;inset:0;z-index:9999;background:var(--paper);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .4s,visibility .4s;
+}
+#loadingScreen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.loading-ring{width:40px;height:40px;border:3px solid var(--paper-dark);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--ink-light);font-size:13px;letter-spacing:2px;font-family:var(--font-display)}
+
+/* ============================================================
+   FIREWORKS
+   ============================================================ */
+#fireworksCanvas{position:fixed;inset:0;z-index:350;pointer-events:none;opacity:0;transition:opacity .5s}
+#fireworksCanvas.active{opacity:1}
+
+/* ============================================================
+   FALLBACK MAP
+   ============================================================ */
+#fallbackMap{
+  width:100%;height:100%;display:none;align-items:center;justify-content:center;
+  flex-direction:column;gap:16px;background:var(--paper);
+}
+#fallbackMap svg{width:100%;max-height:70vh}
+.fallback-hint{font-size:12px;color:var(--ink-light);text-align:center;line-height:1.8;font-family:var(--font-display)}
+.fallback-hint .retry-btn{color:var(--route-kb);cursor:pointer;text-decoration:underline}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (min-width:768px){
+  #detailOverlay{align-items:center;justify-content:flex-end;padding:16px}
+  #detailCard{border-radius:20px;max-width:440px;max-height:92vh;margin-right:4px;transform:translateX(30px)}
+  #detailOverlay.show #detailCard{transform:translateX(0)}
+}
+@media (max-width:380px){
+  .tab-btn{padding:6px 10px;font-size:10px}
+  .tab-btn .tab-icon{font-size:12px}
+  .card-header{padding:16px 16px 8px}
+  .card-body{padding:0 16px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingScreen">
+  <div class="loading-ring"></div>
+  <div class="loading-text">正在翻开江城往事...</div>
+</div>
+
+<!-- Header -->
+<div id="header">
+  <span class="header-title">江城往事</span>
+  <span class="header-sub">解码武汉 1800 年历史</span>
+  <div class="header-progress">
+    <span>已解锁</span><strong id="totalCount">0</strong><span>/40</span>
+    <div class="header-progress-bar"><div class="fill" id="totalBar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- Route Tabs -->
+<div id="routeTabs">
+  <button class="tab-btn route-sy active" data-route="sy" onclick="switchRoute('sy')">
+    <span class="tab-icon">⚔️</span>首义之路<span class="tab-count">0/10</span>
+  </button>
+  <button class="tab-btn route-kb" data-route="kb" onclick="switchRoute('kb')">
+    <span class="tab-icon">🏛️</span>开埠风云<span class="tab-count">0/10</span>
+  </button>
+  <button class="tab-btn route-hy" data-route="hy" onclick="switchRoute('hy')">
+    <span class="tab-icon">🏯</span>汉阳寻根<span class="tab-count">0/10</span>
+  </button>
+  <button class="tab-btn route-gc" data-route="gc" onclick="switchRoute('gc')">
+    <span class="tab-icon">🏘️</span>古城新韵<span class="tab-count">0/10</span>
+  </button>
+</div>
+
+<!-- Map -->
+<div id="mapContainer">
+  <div id="amap"></div>
+  <div id="fallbackMap">
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+      <rect width="800" height="600" fill="#FAF0E6"/>
+      <text x="400" y="270" text-anchor="middle" fill="#6B5D4F" font-size="18" font-family="serif">🗺️ 武汉老城手绘地图</text>
+      <text x="400" y="300" text-anchor="middle" fill="#A89880" font-size="12">长江与汉水在此交汇</text>
+      <text x="400" y="340" text-anchor="middle" fill="#6B5D4F" font-size="13">需要网络连接加载高德地图</text>
+    </svg>
+    <div class="fallback-hint">地图未加载成功 <span class="retry-btn" onclick="location.reload()">点击重试</span></div>
+  </div>
+</div>
+
+<!-- Bottom Bar -->
+<div id="bottomBar">
+  <div class="bottom-progress" id="bottomProgress">⚔️ 首义之路 <strong>0/10</strong></div>
+  <div class="bottom-recent" id="bottomRecent">
+    <div class="bottom-recent-item placeholder">📜</div><div class="bottom-recent-item placeholder">📜</div><div class="bottom-recent-item placeholder">📜</div>
+  </div>
+  <button class="btn-all-routes" id="btnAllRoutes" onclick="switchRoute('all')">🗺️ 全部路线</button>
+</div>
+
+<!-- Detail Overlay -->
+<div id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div id="detailCard"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"><span class="toast-emoji"></span><span class="toast-sub"></span></div>
+
+<!-- Fireworks Canvas -->
+<canvas id="fireworksCanvas"></canvas>
+
+<script>
+'use strict';
+
+/* ================================================================
+   DATA: 40 LOCATIONS, 4 ROUTES
+   ================================================================ */
+const ROUTES = {
+  kb:{ id:'kb', name:'开埠风云', icon:'🏛️', color:'#8B4513', desc:'租界时代的汉口，百年前的开埠记忆' },
+  sy:{ id:'sy', name:'首义之路', icon:'⚔️', color:'#C75B39', desc:'辛亥革命第一枪，改变中国命运' },
+  hy:{ id:'hy', name:'汉阳寻根', icon:'🏯', color:'#708090', desc:'从春秋到洋务，汉阳的千年积淀' },
+  gc:{ id:'gc', name:'古城新韵', icon:'🏘️', color:'#5F9EA0', desc:'武昌古城新生，历史与现代的交织' }
+};
+
+/* 老照片URL占位（后续可替换真实URL） */
+const getOldPhotoUrl = function(id){
+  var urls = {
+    'H-01': 'https://p1.ssl.qhmsg.com/t01f3f79c5c27c93c51.jpg',
+    'H-08': 'https://p1.ssl.qhmsg.com/t01f3f79c5c27c93c51.jpg',
+    'H-19': 'http://image109.360doc.com/DownloadImg/2021/05/1510/222174303_6_20210515101303427_wm'
+  };
+  return urls[id] || '';
+};
+
+const POINTS = [
+  /* ===== 路线1：开埠风云（10个）===== */
+  {id:'H-01',route:'kb',name:'江汉关博物馆',lat:30.5798,lng:114.2921,year:'1924',photoUrl:getOldPhotoUrl('H-01'),oldPhoto:'1924年建成时的江汉关钟楼',task:'听钟声猜年份',steps:['找到江汉关大钟','聆听整点钟声','猜猜这座钟楼的年龄','拍下现在的江汉关']},
+  {id:'H-02',route:'kb',name:'汉口美最时洋行',lat:30.5940,lng:114.2930,year:'1909',photoUrl:'',oldPhoto:'德租界时期洋行原貌',task:'找德文标记',steps:['找到美最时洋行旧址','寻找建筑上的德文标记','了解德租界历史','拍摄建筑细节']},
+  {id:'H-03',route:'kb',name:'德国领事馆旧址',lat:30.5950,lng:114.2940,year:'1888',photoUrl:'',oldPhoto:'维多利亚式领事馆建筑',task:'拍四角廊柱',steps:['找到德国领事馆旧址','观察维多利亚式建筑风格','拍摄四角廊柱','感受租界建筑之美']},
+  {id:'H-04',route:'kb',name:'法国东方汇理银行',lat:30.5970,lng:114.2950,year:'1902',photoUrl:'',oldPhoto:'法租界金融街历史照片',task:'找法式浮雕',steps:['找到东方汇理银行旧址','寻找法式建筑浮雕','了解法租界金融史']},
+  {id:'H-05',route:'kb',name:'巴公房子',lat:30.5880,lng:114.2910,year:'1910',photoUrl:'',oldPhoto:'俄租界时期巴公公寓',task:'找百年信箱',steps:['找到巴公房子','寻找百年信箱','了解俄商巴公兄弟故事','拍摄红砖墙']},
+  {id:'H-06',route:'kb',name:'黎黄陂路街头博物馆',lat:30.5891,lng:114.2903,year:'俄租界',photoUrl:'',oldPhoto:'1920年代黎黄陂路街景',task:'答哪国租界',steps:['漫步黎黄陂路','寻找各国租界遗迹','回答沿途建筑分属哪国租界','打卡街头博物馆']},
+  {id:'H-07',route:'kb',name:'八七会议会址',lat:30.5875,lng:114.2920,year:'1927',photoUrl:'',oldPhoto:'八七会议历史场景',task:'历史问答',steps:['参观八七会议会址','了解1927年历史转折','完成历史知识问答','铭记伟大转折']},
+  {id:'H-08',route:'kb',name:'大智门火车站',lat:30.5920,lng:114.2960,year:'1903',photoUrl:getOldPhotoUrl('H-08'),oldPhoto:'亚洲最壮观火车站原貌',task:'拍四角塔堡',steps:['找到大智门火车站','观察法式四角塔堡','了解京汉铁路历史','拍摄建筑全景']},
+  {id:'H-09',route:'kb',name:'咸安坊',lat:30.5870,lng:114.2930,year:'1930',photoUrl:'',oldPhoto:'石库门里份生活场景',task:'拍光影对比',steps:['走进咸安坊巷弄','寻找光影最美的角度','拍摄石库门与光影的对比','感受里份生活气息']},
+  {id:'H-10',route:'kb',name:'平和打包厂',lat:30.5852,lng:114.2925,year:'1918',photoUrl:'',oldPhoto:'英商平和打包厂旧貌',task:'找1918刻字',steps:['走进平和打包厂','在红砖墙上寻找1918刻字','了解工业遗产保护','记录新旧对比']},
+
+  /* ===== 路线2：首义之路（10个）===== */
+  {id:'H-11',route:'sy',name:'起义门',lat:30.5452,lng:114.2978,year:'1911',photoUrl:'',oldPhoto:'武昌古城起义门原貌',task:'情景剧触发',steps:['登上起义门城楼','阅读武昌起义史料','想象1911年10月10日夜晚','完成情景问答']},
+  {id:'H-12',route:'sy',name:'辛亥革命武昌起义纪念馆',lat:30.5433,lng:114.2971,year:'1911',photoUrl:'',oldPhoto:'鄂军都督府成立时场景',task:'角色扮演',steps:['走进鄂军都督府旧址','了解武昌起义始末','寻找"第一枪"相关文物','完成角色扮演任务']},
+  {id:'H-13',route:'sy',name:'孙中山铜像',lat:30.5438,lng:114.2965,year:'1931',photoUrl:'',oldPhoto:'铜像揭幕典礼照片',task:'找石刻合影',steps:['找到孙中山先生铜像','寻找基座石刻铭文','与铜像合影留念','了解革命先行者事迹']},
+  {id:'H-14',route:'sy',name:'紫阳湖公园',lat:30.5401,lng:114.2950,year:'辛亥时期',photoUrl:'',oldPhoto:'军械所遗址老照片',task:'寻宝',steps:['漫步紫阳湖公园','寻找辛亥军械所遗址','完成寻宝任务','了解武器制造历史']},
+  {id:'H-15',route:'sy',name:'中共五大会址',lat:30.5405,lng:114.2955,year:'1927',photoUrl:'',oldPhoto:'中共五大会议场景',task:'历史问答',steps:['参观五大会址','了解1927年革命形势','完成历史知识问答']},
+  {id:'H-16',route:'sy',name:'武汉农民运动讲习所',lat:30.5410,lng:114.2960,year:'1927',photoUrl:'',oldPhoto:'农讲所学员合影',task:'录语音',steps:['走进农讲所旧址','阅读当年的教材','录制一段朗读语音','感受革命教育氛围']},
+  {id:'H-17',route:'sy',name:'毛泽东旧居',lat:30.5408,lng:114.2958,year:'1927',photoUrl:'',oldPhoto:'1927年毛泽东在武汉',task:'写信',steps:['参观毛泽东旧居','了解1927年在汉经历','写一封给历史的信','记录参观感悟']},
+  {id:'H-18',route:'sy',name:'武昌中央军事政治学校',lat:30.5420,lng:114.2975,year:'1927',photoUrl:'',oldPhoto:'军校学员训练照片',task:'角色扮演',steps:['找到军校旧址','了解军校历史','完成角色扮演','感受黄埔精神']},
+  {id:'H-19',route:'sy',name:'黄鹤楼',lat:30.5440,lng:114.2960,year:'三国-现代',photoUrl:getOldPhotoUrl('H-19'),oldPhoto:'历代黄鹤楼对比图',task:'古今同框',steps:['登上黄鹤楼顶层','俯瞰武汉三镇','寻找古今同框角度','拍下对比照片']},
+  {id:'H-20',route:'sy',name:'武胜门遗址',lat:30.5455,lng:114.2985,year:'明清',photoUrl:'',oldPhoto:'武胜门原貌复原图',task:'考古体验',steps:['找到武胜门遗址','了解武昌古城九门历史','完成考古体验任务']},
+
+  /* ===== 路线3：汉阳寻根（10个）===== */
+  {id:'H-21',route:'hy',name:'晴川阁',lat:30.5632,lng:114.2810,year:'明代',photoUrl:'',oldPhoto:'大禹治水传说图',task:'诗词解谜',steps:['登上晴川阁','朗读"晴川历历汉阳树"','寻找诗中描写的景象','完成诗词解谜']},
+  {id:'H-22',route:'hy',name:'古琴台',lat:30.5583,lng:114.2720,year:'春秋',photoUrl:'',oldPhoto:'伯牙子期知音图',task:'沉浸剧情',steps:['找到伯牙鼓琴雕塑','聆听古琴音乐','了解高山流水故事','完成知音剧情']},
+  {id:'H-23',route:'hy',name:'归元寺',lat:30.5532,lng:114.2675,year:'清代',photoUrl:'',oldPhoto:'归元寺罗汉堂旧影',task:'数罗汉签',steps:['进入罗汉堂','随机从一尊罗汉开始数','记下你的罗汉号','查看对应签文']},
+  {id:'H-24',route:'hy',name:'汉阳造艺术区',lat:30.5601,lng:114.2785,year:'洋务运动',photoUrl:'',oldPhoto:'汉阳兵工厂旧貌',task:'工业考古',steps:['探访汉阳造艺术区','寻找兵工厂遗迹','了解洋务运动历史','感受工业遗产新生']},
+  {id:'H-25',route:'hy',name:'铁门关',lat:30.5650,lng:114.2800,year:'三国',photoUrl:'',oldPhoto:'铁门关原貌复原',task:'历史问答',steps:['找到铁门关遗址','了解三国时期汉阳军事地位','完成历史问答']},
+  {id:'H-26',route:'hy',name:'龟山电视塔',lat:30.5620,lng:114.2750,year:'1986',photoUrl:'',oldPhoto:'1986年建成时的龟山塔',task:'拍塔与桥',steps:['登上龟山','拍摄电视塔与长江大桥同框','感受新旧地标对话']},
+  {id:'H-27',route:'hy',name:'南岸嘴',lat:30.5680,lng:114.2850,year:'自然地标',photoUrl:'',oldPhoto:'两江交汇航拍图',task:'拍奇观',steps:['到达南岸嘴','观察长江与汉江交汇','拍摄两江分界的奇观']},
+  {id:'H-28',route:'hy',name:'汉阳树',lat:30.5550,lng:114.2700,year:'唐代',photoUrl:'',oldPhoto:'唐代银杏老照片',task:'四季对比',steps:['找到千年银杏汉阳树','感受唐代至今的生命力','拍摄四季对比照片']},
+  {id:'H-29',route:'hy',name:'武汉长江大桥',lat:30.5580,lng:114.2900,year:'1957',photoUrl:'',oldPhoto:'1957年通车典礼盛况',task:'拍桥与火车',steps:['走上长江大桥','等待火车经过','拍摄火车与大桥同框','感受万里长江第一桥']},
+  {id:'H-30',route:'hy',name:'杨泗港大桥',lat:30.5300,lng:114.2500,year:'2019',photoUrl:'',oldPhoto:'杨泗港大桥建设过程',task:'拍日落',steps:['傍晚到达杨泗港大桥','寻找最佳拍摄角度','拍摄大桥日落','感受新旧长江桥的对话']},
+
+  /* ===== 路线4：古城新韵（10个）===== */
+  {id:'H-31',route:'gc',name:'昙华林',lat:30.5480,lng:114.2965,year:'明清',photoUrl:'',oldPhoto:'老昙华林街景',task:'找16处博物馆',steps:['漫步昙华林老街','探访沿途博物馆','记录你发现的博物馆','感受古城新韵']},
+  {id:'H-32',route:'gc',name:'文华大学礼拜堂',lat:30.5475,lng:114.2960,year:'1871',photoUrl:'',oldPhoto:'文华书院时期照片',task:'拍哥特建筑',steps:['找到文华大学礼拜堂','观察哥特式建筑风格','拍摄建筑细节','了解教会大学历史']},
+  {id:'H-33',route:'gc',name:'翟雅阁',lat:30.5485,lng:114.2970,year:'1921',photoUrl:'',oldPhoto:'翟雅阁健身所旧照',task:'体育历史',steps:['找到翟雅阁','了解中国近代体育史','感受百年体育建筑']},
+  {id:'H-34',route:'gc',name:'仁济医院',lat:30.5490,lng:114.2975,year:'1883',photoUrl:'',oldPhoto:'汉口最早的西医院',task:'医学历史',steps:['找到仁济医院旧址','了解近代西医入华历史','感受医学进步']},
+  {id:'H-35',route:'gc',name:'瑞典教区旧址',lat:30.5488,lng:114.2968,year:'1890',photoUrl:'',oldPhoto:'传教士在武汉生活照',task:'北欧风格',steps:['找到瑞典教区旧址','观察北欧建筑风格','了解传教士在汉历史']},
+  {id:'H-36',route:'gc',name:'石瑛故居',lat:30.5478,lng:114.2958,year:'民国',photoUrl:'',oldPhoto:'辛亥革命元老石瑛',task:'人物故事',steps:['参观石瑛故居','了解这位辛亥元老的故事','感受民国人物风骨']},
+  {id:'H-37',route:'gc',name:'粮道街',lat:30.5512,lng:114.2995,year:'明清',photoUrl:'',oldPhoto:'老粮道街民生百态',task:'方言挑战',steps:['漫步粮道街','学习一句武汉方言','用武汉话念出街名','完成方言挑战']},
+  {id:'H-38',route:'gc',name:'得胜桥',lat:30.5440,lng:114.2980,year:'明代',photoUrl:'',oldPhoto:'得胜桥老街原貌',task:'古今同框',steps:['走进得胜桥老街','寻找最佳拍摄角度','拍下老街与黄鹤楼同框','完成古今同框']},
+  {id:'H-39',route:'gc',name:'宝通寺',lat:30.5200,lng:114.3350,year:'南朝',photoUrl:'',oldPhoto:'千年古寺宝塔旧照',task:'银杏打卡',steps:['走进宝通寺','找到千年银杏','在银杏树下打卡','感受南朝古寺禅意']},
+  {id:'H-40',route:'gc',name:'武汉大学早期建筑',lat:30.5350,lng:114.3650,year:'1930s',photoUrl:'',oldPhoto:'国立武汉大学建校初期',task:'樱花城堡',steps:['找到老斋舍','登上樱花城堡天台','欣赏民国建筑群','感受学府百年风华']}
+];
+
+/* ================================================================
+   GAME STATE
+   ================================================================ */
+let currentRoute = 'sy';
+let unlocked = {};
+let map = null;
+let markers = {};
+let polylines = {};
+let activeInfoWindow = null;
+let mapLoaded = false;
+let detailPointId = null;
+
+try{var s=localStorage.getItem('wh_history_unlocked');if(s)unlocked=JSON.parse(s)}catch(e){}
+function saveState(){try{localStorage.setItem('wh_history_unlocked',JSON.stringify(unlocked))}catch(e){}}
+function isUnlocked(id){return!!unlocked[id]}
+function setUnlocked(id){unlocked[id]=true;saveState()}
+function countRoute(routeId){return POINTS.filter(function(p){return p.route===routeId&&isUnlocked(p.id)}).length}
+function totalUnlocked(){return POINTS.filter(function(p){return isUnlocked(p.id)}).length}
+
+/* ================================================================
+   FIND POINT BY ID
+   ================================================================ */
+function findPoint(id){return POINTS.find(function(p){return p.id===id})}
+
+/* ================================================================
+   MAP INITIALIZATION
+   ================================================================ */
+const MAP_CENTER = [114.3055, 30.5928];
+const MAP_ZOOM = 11;
+
+function initMap(){
+  if(typeof AMap==='undefined'){
+    showFallback();
+    return;
+  }
+  try{
+    map = new AMap.Map('amap',{
+      center: MAP_CENTER,
+      zoom: MAP_ZOOM,
+      mapStyle: 'amap://styles/normal',
+      viewMode: '2D',
+      resizeEnable: true,
+      touchZoom: true,
+      dragEnable: true,
+      zoomEnable: true,
+      doubleClickZoom: true,
+      scrollWheel: true,
+      showBuildingBlock: false
+    });
+
+    map.on('complete', function(){
+      mapLoaded = true;
+      document.getElementById('loadingScreen').classList.add('hidden');
+      document.getElementById('fallbackMap').style.display = 'none';
+      document.getElementById('amap').style.display = '';
+      createAllMarkers();
+      createPolylines();
+      refreshRoute();
+    });
+
+    // fallback: 如果 complete 事件未触发
+    setTimeout(function(){
+      if(!mapLoaded && map){
+        try{
+          var c = map.getCenter();
+          if(c){
+            mapLoaded = true;
+            document.getElementById('loadingScreen').classList.add('hidden');
+            document.getElementById('fallbackMap').style.display = 'none';
+            document.getElementById('amap').style.display = '';
+            createAllMarkers();
+            createPolylines();
+            refreshRoute();
+          }
+        }catch(e){}
+      }
+    }, 3000);
+  }catch(e){
+    showFallback();
+  }
+}
+
+function showFallback(){
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('amap').style.display = 'none';
+  document.getElementById('fallbackMap').style.display = 'flex';
+}
+
+/* ================================================================
+   MARKERS — HTML content markers (圆形邮戳)
+   ================================================================ */
+function createMarkerHTML(point){
+  var cfg = ROUTES[point.route];
+  var unlocked = isUnlocked(point.id);
+  var yearNum = (point.year||'').replace(/[^0-9]/g,'').slice(-2) || (point.year||'?').slice(0,2);
+  var bg = unlocked ? cfg.color : '#B8A898';
+  var shadow = unlocked ? '0 0 10px '+cfg.color+', 0 0 20px '+cfg.color : 'none';
+  var cls = unlocked ? 'history-pin unlocked' : 'history-pin locked';
+  var borderColor = unlocked ? cfg.color : '#ccc';
+
+  return '<div class="'+cls+'" style="background:'+bg+';border:2px solid '+borderColor+';box-shadow:'+shadow+';color:#fff">'+yearNum+'</div>';
+}
+
+function createAllMarkers(){
+  if(!map)return;
+  // 清除旧标记
+  Object.keys(markers).forEach(function(k){
+    if(markers[k]){markers[k].setMap(null);markers[k]=null}
+  });
+  markers = {};
+
+  POINTS.forEach(function(point){
+    var html = createMarkerHTML(point);
+    var marker = new AMap.Marker({
+      position: [point.lng, point.lat],
+      content: html,
+      offset: new AMap.Pixel(-20, -20),
+      zIndex: isUnlocked(point.id)?100:50,
+      visible: true
+    });
+    marker._pointData = point;
+    // 点击标记 → 直接打开详情卡片
+    marker.on('click', function(){
+      openDetail(point.id);
+    });
+    markers[point.id] = marker;
+    map.add(marker);
+  });
+}
+
+function refreshMarker(point){
+  var marker = markers[point.id];
+  if(!marker)return;
+  var html = createMarkerHTML(point);
+  marker.setContent(html);
+  marker.setzIndex(isUnlocked(point.id)?100:50);
+}
+
+/* ================================================================
+   POLYLINES — 4条虚线路线
+   ================================================================ */
+function createPolylines(){
+  if(!map)return;
+  Object.keys(polylines).forEach(function(k){
+    if(polylines[k]){polylines[k].setMap(null)}
+  });
+  polylines = {};
+
+  Object.keys(ROUTES).forEach(function(routeId){
+    var cfg = ROUTES[routeId];
+    var pts = POINTS.filter(function(p){return p.route===routeId}).map(function(p){return [p.lng,p.lat]});
+    if(pts.length<2)return;
+    var polyline = new AMap.Polyline({
+      path: pts,
+      strokeColor: cfg.color,
+      strokeWeight: 3,
+      strokeOpacity: 0.55,
+      strokeStyle: 'dashed',
+      strokeDasharray: [12, 8],
+      lineJoin: 'round',
+      showDir: true,
+      zIndex: 10
+    });
+    polyline.setMap(map);
+    polylines[routeId] = polyline;
+  });
+}
+
+/* ================================================================
+   REFRESH ROUTE — 切换显示/隐藏标记和路线
+   ================================================================ */
+function refreshRoute(){
+  if(!map)return;
+
+  // 标记可见性
+  POINTS.forEach(function(point){
+    var marker = markers[point.id];
+    if(!marker)return;
+    if(currentRoute==='all' || point.route===currentRoute){
+      marker.show();
+      marker.setOptions({opacity:1});
+    }else{
+      // 非当前路线标记半透明
+      marker.show();
+      marker.setOptions({opacity:0.15});
+    }
+  });
+
+  // 路线可见性
+  Object.keys(polylines).forEach(function(rid){
+    var pl = polylines[rid];
+    if(!pl)return;
+    if(currentRoute==='all' || currentRoute===rid){
+      pl.show();
+      pl.setOptions({strokeOpacity:0.7});
+    }else{
+      pl.show();
+      pl.setOptions({strokeOpacity:0.08});
+    }
+  });
+
+  // 缩放至区域
+  if(currentRoute!=='all'){
+    fitRouteView(currentRoute);
+  }else{
+    // 全部路线 → 缩放至武汉三镇
+    map.setZoomAndCenter(MAP_ZOOM, MAP_CENTER);
+  }
+}
+
+function fitRouteView(routeId){
+  if(!map)return;
+  var pts = POINTS.filter(function(p){return p.route===routeId});
+  if(!pts.length)return;
+
+  // 收集当前路线的所有标记
+  var overs = pts.map(function(p){return markers[p.id]}).filter(Boolean);
+  if(overs.length===0)return;
+
+  // 使用 setFitView 聚焦到这些标记
+  map.setFitView(overs, false, [60, 60, 60, 60]);
+}
+
+/* ================================================================
+   DETAIL CARD — 打开详情卡片
+   ================================================================ */
+function openDetail(pointId){
+  if(activeInfoWindow){
+    try{map.clearInfoWindow()}catch(e){}
+    activeInfoWindow = null;
+  }
+  detailPointId = pointId;
+  var point = findPoint(pointId);
+  if(!point)return;
+  var cfg = ROUTES[point.route];
+  var overlay = document.getElementById('detailOverlay');
+  var card = document.getElementById('detailCard');
+
+  overlay.style.setProperty('--route-color', cfg.color);
+  card.style.setProperty('--route-color', cfg.color);
+
+  var stepsHTML = (point.steps||[]).map(function(s){return '<li>'+s+'</li>'}).join('');
+  var yearNum = (point.year||'').replace(/[^0-9]/g,'');
+
+  var unlockHTML = '';
+  if(isUnlocked(pointId)){
+    unlockHTML = '<div class="unlock-section"><h4>✅ 已解锁</h4><p style="font-size:12px;color:var(--ink-light);font-family:var(--font-display)">你已解码这段历史记忆</p></div>';
+  }else{
+    unlockHTML =
+    '<div class="unlock-section">'+
+      '<h4>🔓 解锁这段历史</h4>'+
+      '<ul class="unlock-steps">'+stepsHTML+'</ul>'+
+      '<button class="btn-unlock" style="background:'+cfg.color+'" id="unlockBtn'+pointId+'" onclick="doUnlock(\''+pointId+'\')">📷 解锁 · '+point.year+'年记忆</button>'+
+    '</div>';
+  }
+
+  // 老照片URL（如果有）
+  var hasPhoto = !!point.photoUrl;
+
+  card.innerHTML =
+    '<div class="card-color-bar" style="background:'+cfg.color+'"></div>'+
+    '<div class="card-header">'+
+      '<div class="card-num" style="color:'+cfg.color+'">'+point.id+'</div>'+
+      '<div class="card-info">'+
+        '<div class="card-name">'+point.name+'</div>'+
+        '<div class="card-year" style="color:'+cfg.color+'">'+point.year+'年 · '+cfg.name+'</div>'+
+      '</div>'+
+      '<button class="card-close" onclick="closeDetail()">✕</button>'+
+    '</div>'+
+    '<div class="card-body">'+
+
+      '<!-- 老照片卡片 -->'+
+      '<div class="photo-card-title"><span>📷</span> 今昔对比</div>'+
+      '<div class="photo-dual">'+
+        // 左侧：老照片
+        '<div class="photo-box photo-box-old">'+
+          (hasPhoto ?
+            '<div class="photo-box-img blurred" id="oldPhotoImg'+pointId+'" style="background-image:url(\''+point.photoUrl+'\')"></div>' :
+            '<div class="photo-box-inner"><div class="photo-box-emoji">📷</div><div style="font-size:10px;color:var(--ink-light);text-align:center;line-height:1.4">老照片待补充<br>'+point.oldPhoto+'</div></div>'
+          )+
+          '<div class="photo-box-label" style="position:absolute;bottom:6px;right:6px;z-index:2">'+point.year+'年</div>'+
+        '</div>'+
+        // 右侧：现场拍摄
+        '<div class="photo-box photo-box-now">'+
+          '<div class="photo-box-inner"><div class="photo-box-emoji">🏛️</div><div style="font-size:10px;color:var(--ink-light);text-align:center">现在的<br>'+point.name+'</div></div>'+
+          '<div class="photo-box-label" style="position:absolute;bottom:6px;left:6px;z-index:2">如今</div>'+
+        '</div>'+
+      '</div>'+
+
+      '<!-- 对比滑块 -->'+
+      '<div class="compare-slider-wrap">'+
+        '<span>'+yearNum+'年</span>'+
+        '<input type="range" class="compare-slider" min="0" max="100" value="50" oninput="moveCompare(\''+pointId+'\',this.value)">'+
+        '<span>现在</span>'+
+      '</div>'+
+
+      '<!-- 任务 -->'+
+      '<div class="card-task-box">'+
+        '<span class="task-icon">📜</span>'+
+        '<span class="task-text">'+point.task+'</span>'+
+      '</div>'+
+
+      unlockHTML+
+
+    '</div>';
+
+  overlay.classList.add('show');
+}
+
+function moveCompare(pointId, val){
+  var img = document.getElementById('oldPhotoImg'+pointId);
+  if(!img)return;
+  img.style.clipPath = 'inset(0 '+(100-val)+'% 0 0)';
+}
+
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('show');
+  detailPointId = null;
+}
+
+/* ================================================================
+   UNLOCK — 老照片显影动画
+   ================================================================ */
+function doUnlock(pointId){
+  if(isUnlocked(pointId))return;
+  var point = findPoint(pointId);
+  if(!point)return;
+  var cfg = ROUTES[point.route];
+
+  // 老照片从模糊到清晰
+  var oldImg = document.getElementById('oldPhotoImg'+pointId);
+  if(oldImg){
+    oldImg.classList.remove('blurred');
+    oldImg.classList.add('clearing');
+    setTimeout(function(){oldImg.classList.remove('clearing');oldImg.classList.add('clear')}, 800);
+  }
+
+  // 禁用按钮
+  var btn = document.getElementById('unlockBtn'+pointId);
+  if(btn){btn.disabled=true;btn.textContent='📷 正在显影...';btn.classList.add('success')}
+
+  // 2秒后完成
+  setTimeout(function(){
+    setUnlocked(pointId);
+    // 重建标记（HTML content方式）
+    var marker = markers[pointId];
+    if(marker){
+      marker.setContent(createMarkerHTML(point));
+      marker.setzIndex(100);
+    }
+    updateAllUI();
+    refreshRoute();
+    if(btn){btn.textContent='✅ 已解锁 · '+point.year+'年记忆';btn.classList.add('success')}
+
+    // Toast
+    var toast = document.getElementById('toast');
+    toast.querySelector('.toast-emoji').textContent = '📜';
+    toast.querySelector('.toast-sub').textContent = '解锁：'+point.name+'（'+point.year+'年）';
+    toast.classList.add('show');
+    setTimeout(function(){toast.classList.remove('show')}, 2200);
+
+    // 路线完成
+    if(countRoute(point.route)===10){
+      setTimeout(function(){
+        var t = document.getElementById('toast');
+        t.querySelector('.toast-emoji').textContent = '🏅';
+        t.querySelector('.toast-sub').textContent = cfg.name+' · 全部解锁！';
+        t.classList.add('show');
+        setTimeout(function(){t.classList.remove('show')}, 3000);
+      }, 2400);
+    }
+
+    // 全部40个解锁
+    if(totalUnlocked()===40){
+      setTimeout(startFireworks, 2600);
+      setTimeout(function(){
+        var t = document.getElementById('toast');
+        t.querySelector('.toast-emoji').textContent = '🏆';
+        t.querySelector('.toast-sub').textContent = '江城往事 · 完全解码！1800年历史尽在眼前';
+        t.classList.add('show');
+        setTimeout(function(){t.classList.remove('show')}, 4000);
+      }, 3500);
+    }
+  }, 2000);
+}
+
+/* ================================================================
+   ROUTE SWITCHING
+   ================================================================ */
+function switchRoute(routeId){
+  currentRoute = routeId;
+
+  // 更新 Tab 高亮
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    if(btn.dataset.route===routeId){
+      btn.classList.add('active');
+    }else{
+      btn.classList.remove('active');
+    }
+  });
+
+  // 更新底部"全部路线"按钮
+  var btnAll = document.getElementById('btnAllRoutes');
+  if(btnAll){
+    if(routeId==='all'){btnAll.classList.add('active')}
+    else{btnAll.classList.remove('active')}
+  }
+
+  refreshRoute();
+  updateBottomBar();
+}
+
+/* ================================================================
+   UI UPDATES
+   ================================================================ */
+function updateAllUI(){
+  var total = totalUnlocked();
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('totalBar').style.width = (total/40*100)+'%';
+
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    var rid = btn.dataset.route;
+    if(!rid||!ROUTES[rid])return;
+    var cnt = countRoute(rid);
+    var countEl = btn.querySelector('.tab-count');
+    if(countEl)countEl.textContent = cnt+'/10';
+    if(cnt===10&&countEl)countEl.style.color='var(--success)';
+  });
+  updateBottomBar();
+  updateRecent();
+}
+
+function updateBottomBar(){
+  var el = document.getElementById('bottomProgress');
+  if(!el)return;
+  if(currentRoute==='all'){
+    el.innerHTML = '🗺️ 全部路线 <strong>'+totalUnlocked()+'/40</strong>';
+  }else{
+    var cfg = ROUTES[currentRoute];
+    if(!cfg)return;
+    el.innerHTML = cfg.icon+' '+cfg.name+' <strong style="color:'+cfg.color+'">'+countRoute(currentRoute)+'/10</strong>';
+  }
+}
+
+function updateRecent(){
+  var el = document.getElementById('bottomRecent');
+  if(!el)return;
+  var recent = POINTS.filter(function(p){return isUnlocked(p.id)}).slice(-3).reverse();
+  el.innerHTML = '';
+  if(recent.length===0){
+    for(var i=0;i<3;i++)el.innerHTML+='<div class="bottom-recent-item placeholder">📜</div>';
+  }else{
+    recent.forEach(function(p){
+      var cfg = ROUTES[p.route];
+      el.innerHTML+='<div class="bottom-recent-item" style="border-color:'+cfg.color+'44;background:'+cfg.color+'11;font-size:17px">🏛️</div>';
+    });
+    for(var j=recent.length;j<3;j++)el.innerHTML+='<div class="bottom-recent-item placeholder">📜</div>';
+  }
+}
+
+/* ================================================================
+   FIREWORKS
+   ================================================================ */
+let fwActive=false, fwRAF=null;
+const particles=[];
+function startFireworks(){
+  fwActive=true;
+  var c = document.getElementById('fireworksCanvas');
+  c.classList.add('active');
+  c.width = window.innerWidth;
+  c.height = window.innerHeight;
+  var ctx = c.getContext('2d');
+  function spawn(){
+    var cx = Math.random()*c.width;
+    var cy = Math.random()*c.height*0.5;
+    var cols = ['#C75B39','#8B4513','#D4A574','#5F9EA0','#B8860B','#D2691E','#CD853F'];
+    var col = cols[Math.floor(Math.random()*cols.length)];
+    for(var i=0;i<50;i++){
+      var a = Math.random()*Math.PI*2;
+      var s = 2+Math.random()*5;
+      particles.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,decay:0.01+Math.random()*0.02,color:col,size:1.5+Math.random()*2.5});
+    }
+  }
+  function anim(){
+    if(!fwActive)return;
+    ctx.globalCompositeOperation='destination-out';
+    ctx.fillStyle='rgba(0,0,0,.16)';
+    ctx.fillRect(0,0,c.width,c.height);
+    ctx.globalCompositeOperation='lighter';
+    for(var i=particles.length-1;i>=0;i--){
+      var p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=0.04;p.life-=p.decay;
+      if(p.life<=0){particles.splice(i,1);continue}
+      ctx.fillStyle=p.color;ctx.globalAlpha=p.life;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    fwRAF=requestAnimationFrame(anim);
+  }
+  var bursts=0;
+  var iv=setInterval(function(){
+    spawn();bursts++;
+    if(bursts>=12){
+      clearInterval(iv);
+      setTimeout(function(){
+        fwActive=false;
+        cancelAnimationFrame(fwRAF);
+        ctx.clearRect(0,0,c.width,c.height);
+        c.classList.remove('active');
+      },1800);
+    }
+  },380);
+  anim();
+}
+
+/* ================================================================
+   INIT
+   ================================================================ */
+function init(){
+  updateAllUI();
+  updateBottomBar();
+  updateRecent();
+  if(typeof AMap!=='undefined'){
+    initMap();
+  }
+  // 5秒后仍未加载则降级
+  setTimeout(function(){
+    if(!mapLoaded)showFallback();
+  },5000);
+}
+
+// 高德地图加载回调
+window.onAMapLoad = function(){
+  initMap();
+};
+
+document.addEventListener('DOMContentLoaded', init);
+
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape')closeDetail();
+});
+
+// 窗口大小变化时调整地图
+window.addEventListener('resize', function(){
+  if(fwActive){
+    var c = document.getElementById('fireworksCanvas');
+    if(c){c.width=window.innerWidth;c.height=window.innerHeight}
+  }
+});
+</script>
+
+<!-- 高德地图 JS API -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=fccd5deb1e286e4bac372e8073838a31&callback=onAMapLoad" async defer></script>
+</body>
+</html>
