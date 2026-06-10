@@ -82,40 +82,51 @@ body{
   transition:all .3s;
 }
 .custom-marker.repaired{opacity:.6;border-color:var(--green)}
-/* ---- points list ---- */
-.points-section{padding:0 16px 12px}
-.section-title{font-size:15px;font-weight:600;color:var(--text-main);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.section-title::before{content:"";display:inline-block;width:4px;height:16px;background:var(--blue);border-radius:2px}
-.point-card{
-  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:8px;
-  padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s ease;
-  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+/* ---- side panel (right floating card) ---- */
+.side-panel-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.4);
+  z-index:900;display:none;
 }
-.point-card:hover{border-color:var(--blue);box-shadow:0 2px 12px rgba(184,134,11,0.1)}
-.point-card.repaired{border-color:var(--green);background:rgba(91,140,90,0.06)}
-.point-card .pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.point-card .pc-id{font-size:10px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:2px 6px;border-radius:3px;font-family:"KaiTi","STKaiti",serif}
-.point-card .pc-repair-badge{font-size:10px;color:var(--green);background:rgba(91,140,90,0.1);padding:2px 6px;border-radius:3px}
-.point-card .pc-name{font-size:15px;font-weight:600;color:var(--text-main)}
-.point-card .pc-tags{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
-.pc-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
-.pc-tag.type-building{background:rgba(212,132,58,0.12);color:var(--orange)}
-.pc-tag.type-event{background:rgba(196,90,74,0.12);color:var(--red)}
-.pc-tag.type-person{background:rgba(123,107,166,0.12);color:var(--purple)}
-.pc-tag.type-life{background:rgba(91,140,90,0.12);color:var(--green)}
-.pc-tag.play-puzzle{background:rgba(184,134,11,0.12);color:var(--blue-text)}
-.pc-tag.play-sort{background:rgba(196,90,74,0.12);color:var(--red)}
-.pc-tag.play-voice{background:rgba(123,107,166,0.12);color:var(--purple)}
-.pc-tag.play-compare{background:rgba(91,140,90,0.12);color:var(--green)}
-.point-card .pc-task{font-size:12px;color:var(--orange);font-weight:600;margin-top:6px}
-.point-card .pc-desc{font-size:11px;color:var(--text-muted);margin-top:3px;line-height:1.5}
-.point-card .pc-reward{font-size:11px;color:var(--green);margin-top:6px}
-.point-card .pc-btn{
-  margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--blue);font-size:12px;font-weight:600;
-  cursor:pointer;transition:all .2s;background:var(--blue);color:#fff;
+.side-panel-overlay.show{display:block}
+.side-panel{
+  position:fixed;top:50%;right:20px;transform:translateY(-50%);
+  width:320px;max-width:calc(100vw - 40px);max-height:80vh;
+  background:var(--card-bg);z-index:901;
+  box-shadow:-4px 8px 32px rgba(0,0,0,.18);overflow-y:auto;
+  padding:18px 16px;border-radius:12px;border:1px solid var(--border-dim);
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
 }
-.point-card .pc-btn:hover{background:var(--blue-hover);border-color:var(--blue-hover)}
-.point-card .pc-btn.done{background:var(--green);border-color:var(--green);pointer-events:none}
+.side-panel.open{opacity:1;pointer-events:auto}
+.side-panel .sp-close{
+  float:right;background:none;border:none;color:var(--text-muted);font-size:20px;
+  cursor:pointer;line-height:1;padding:0 0 4px 4px;
+}
+.side-panel .sp-id{font-size:11px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:3px 8px;border-radius:3px;font-family:"KaiTi","STKaiti",serif;display:inline-block;margin-bottom:4px}
+.side-panel .sp-name{font-size:18px;font-weight:700;color:var(--text-main);margin-bottom:2px}
+.side-panel .sp-year{font-size:12px;color:var(--text-muted);margin-bottom:6px}
+.side-panel .sp-tags{display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap}
+.sp-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+.sp-tag.type-building{background:rgba(212,132,58,0.12);color:var(--orange)}
+.sp-tag.type-event{background:rgba(196,90,74,0.12);color:var(--red)}
+.sp-tag.type-person{background:rgba(123,107,166,0.12);color:var(--purple)}
+.sp-tag.type-life{background:rgba(91,140,90,0.12);color:var(--green)}
+.sp-tag.play-puzzle{background:rgba(184,134,11,0.12);color:var(--blue-text)}
+.sp-tag.play-sort{background:rgba(196,90,74,0.12);color:var(--red)}
+.sp-tag.play-voice{background:rgba(123,107,166,0.12);color:var(--purple)}
+.sp-tag.play-compare{background:rgba(91,140,90,0.12);color:var(--green)}
+.side-panel .sp-task{font-size:12px;color:var(--orange);font-weight:600;margin-top:4px}
+.side-panel .sp-desc{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.6}
+.side-panel .sp-reward{font-size:12px;color:var(--green);margin-top:6px}
+.side-panel .sp-btn{
+  display:block;width:100%;margin-top:12px;padding:10px;border-radius:8px;border:none;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;
+  background:var(--blue);color:#fff;
+}
+.side-panel .sp-btn:hover{background:var(--blue-hover)}
+.side-panel .sp-btn.done{background:var(--green);pointer-events:none}
+.side-panel .sp-repaired{display:inline-block;margin-left:6px;font-size:10px;color:var(--green);background:rgba(91,140,90,0.1);padding:2px 6px;border-radius:3px;vertical-align:middle}
+/* ---- map hint ---- */
+.map-hint{text-align:center;font-size:11px;color:var(--text-faint);padding:4px 0 10px;margin:0 16px}
 /* ---- modal ---- */
 .modal-overlay{
   position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.6);
@@ -234,15 +245,41 @@ body{
 /* theory section */
 .theory-section{
   margin:0 16px 16px;padding:14px;border-top:1px solid var(--border-dim);
+  position:relative;
 }
-.theory-title{font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:10px}
-.theory-card{
-  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:8px;
-  padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04);
+.theory-title{font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:12px}
+/* theory circle buttons */
+.theory-circles{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-start}
+.theory-circle-btn{
+  width:56px;height:56px;border-radius:50%;border:2px solid var(--border);
+  background:var(--card-bg);cursor:pointer;transition:all .3s ease;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:600;color:var(--text-main);
+  position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05);
 }
-.theory-card .th-title{font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:4px}
-.theory-card .th-content{font-size:12px;color:var(--text-muted);line-height:1.6}
-.theory-goal{font-size:11px;color:var(--text-faint);margin-top:12px;line-height:1.5}
+.theory-circle-btn:hover{border-color:var(--blue);transform:scale(1.1);box-shadow:0 4px 16px rgba(184,134,11,0.15)}
+.theory-circle-btn.c1{border-color:var(--orange);color:var(--orange)}
+.theory-circle-btn.c2{border-color:var(--red);color:var(--red)}
+.theory-circle-btn.c3{border-color:var(--green);color:var(--green)}
+.theory-circle-btn.c4{border-color:var(--purple);color:var(--purple)}
+/* theory popup */
+.theory-popup-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.5);
+  z-index:950;display:none;align-items:center;justify-content:center;padding:16px;
+}
+.theory-popup-overlay.show{display:flex}
+.theory-popup{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
+  width:100%;max-width:400px;padding:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,.12);
+}
+.theory-popup .tp-title{font-size:17px;font-weight:700;color:var(--text-main);margin-bottom:8px}
+.theory-popup .tp-content{font-size:13px;color:var(--text-muted);line-height:1.7}
+.theory-popup .tp-close{
+  float:right;background:none;border:none;color:var(--text-muted);font-size:22px;
+  cursor:pointer;line-height:1;
+}
+.theory-goal{font-size:11px;color:var(--text-faint);margin-top:14px;line-height:1.5}
 /* footer */
 .footer{text-align:center;padding:16px;color:var(--text-faint);font-size:11px;border-top:1px solid var(--border-dim)}
 /* leaflet overrides */
@@ -292,20 +329,31 @@ body{
 <!-- ========== MAP ========== -->
 <div class="map-section"><div id="map"></div></div>
 
-<!-- ========== POINTS LIST ========== -->
-<div class="points-section">
-  <div class="section-title">路线点位</div>
-  <div id="pointsList"></div>
+<!-- ========== MAP HINT ========== -->
+<div class="map-hint">📍 点击地图上的图标查看点位详情</div>
+
+<!-- ========== SIDE PANEL OVERLAY ========== -->
+<div class="side-panel-overlay" id="sidePanelOverlay" onclick="closeSidePanel()"></div>
+<div class="side-panel" id="sidePanel">
+  <button class="sp-close" onclick="closeSidePanel()">✕</button>
+  <div id="sidePanelContent"></div>
 </div>
 
 <!-- ========== THEORY ========== -->
 <div class="theory-section">
   <div class="theory-title">📖 理论框架</div>
-  <div class="theory-card"><div class="th-title">1. 可玩城市（Playable City）</div><div class="th-content">将城市空间转化为游戏化场域，让市民在探索中体验城市历史的层次感。</div></div>
-  <div class="theory-card"><div class="th-title">2. 地图叙事（Map Narrative）</div><div class="th-content">地图作为故事载体，每一条路线串联起一段历史叙事，25个点位构成武汉1800年的完整故事链。</div></div>
-  <div class="theory-card"><div class="th-title">3. 参与式营造（Participatory Placemaking）</div><div class="th-content">用户通过"修复"历史碎片的行为，参与城市记忆的共同生产，强化对地方的认同与归属感。</div></div>
-  <div class="theory-card"><div class="th-title">4. 多层交互（Multi-layer Interaction）</div><div class="th-content">历史/青年/美食/生态四层空间的游戏化建构，让城市成为一个可被"阅读"的立体文本。</div></div>
+  <div class="theory-circles">
+    <div class="theory-circle-btn c1" onclick="openTheoryPopup(0)" title="可玩城市">可玩<br>城市</div>
+    <div class="theory-circle-btn c2" onclick="openTheoryPopup(1)" title="地图叙事">地图<br>叙事</div>
+    <div class="theory-circle-btn c3" onclick="openTheoryPopup(2)" title="参与式营造">参与<br>营造</div>
+    <div class="theory-circle-btn c4" onclick="openTheoryPopup(3)" title="多层交互">多层<br>交互</div>
+  </div>
   <div class="theory-goal">研究目标：通过游戏化设计，提升市民对武汉历史街区的探索欲与归属感，为城市更新提供创新路径。</div>
+</div>
+
+<!-- ========== THEORY POPUP OVERLAY ========== -->
+<div class="theory-popup-overlay" id="theoryPopupOverlay" onclick="closeTheoryPopup()">
+  <div class="theory-popup" id="theoryPopup" onclick="event.stopPropagation()"></div>
 </div>
 
 <!-- ========== FOOTER ========== -->
@@ -329,13 +377,13 @@ const ROUTES = [
     reward:"称号「租界侦探」",
     color:"#f0883e",emoji:"🔍",
     points:[
-      {id:"H-01",name:"江汉关",year:"1924年",type:"建筑",play:"拼图修复",task:"钟楼密语",desc:"老照片碎成4块，拖动拼图还原江汉关钟楼全貌",reward:"线索「海关钟声」",lat:30.576075,lng:114.297308},
-      {id:"H-05",name:"巴公房子",year:"1910年",type:"建筑",play:"拼图修复",task:"俄式洋房",desc:"拼合巴公房子老照片，还原俄式古典建筑风貌",reward:"线索「俄国茶商」",lat:30.586141,lng:114.299831},
-      {id:"H-10",name:"平和打包厂",year:"1918年",type:"建筑",play:"拼图修复",task:"打包厂遗稿",desc:"拼合老汉口工业建筑照片，还原打包厂历史",reward:"线索「工业记忆」",lat:30.582585,lng:114.297772},
-      {id:"H-06",name:"黎黄陂路",year:"1900年",type:"生活",play:"对比修复",task:"街头博物馆",desc:"对比黎黄陂路今昔照片，滑动查看百年变迁",reward:"线索「使馆风云」",lat:30.586444,lng:114.302226},
-      {id:"H-07",name:"八七会议会址",year:"1927年",type:"事件",play:"排序修复",task:"紧急会议",desc:"将八七会议相关3张历史照片按时间顺序排列",reward:"线索「革命转折」",lat:30.586637,lng:114.299904},
-      {id:"H-08",name:"大智门火车站",year:"1903年",type:"建筑",play:"拼图修复",task:"最后一班列车",desc:"拼合大智门火车站老照片，还原京汉铁路起点",reward:"线索「铁路先锋」",lat:30.594098,lng:114.297131},
-      {id:"H-09",name:"咸安坊",year:"1915年",type:"生活",play:"对比修复",task:"里份暗号",desc:"对比咸安坊老照片与现状，感受里份文化变迁",reward:"线索「里份密匙」",lat:30.582745,lng:114.295924}
+      {id:"J-01",name:"江汉关",year:"1924年",type:"建筑",play:"拼图修复",task:"钟楼密语",desc:"老照片碎成4块，拖动拼图还原江汉关钟楼全貌",reward:"线索「海关钟声」",lat:30.576075,lng:114.297308},
+      {id:"J-02",name:"黎黄陂路",year:"1900年",type:"生活",play:"对比修复",task:"街头博物馆",desc:"对比黎黄陂路今昔照片，滑动查看百年变迁",reward:"线索「使馆风云」",lat:30.586444,lng:114.302226},
+      {id:"J-03",name:"八七会议会址",year:"1927年",type:"事件",play:"排序修复",task:"紧急会议",desc:"将八七会议相关3张历史照片按时间顺序排列",reward:"线索「革命转折」",lat:30.586637,lng:114.299904},
+      {id:"J-04",name:"巴公房子",year:"1910年",type:"建筑",play:"拼图修复",task:"俄式洋房",desc:"拼合巴公房子老照片，还原俄式古典建筑风貌",reward:"线索「俄国茶商」",lat:30.586141,lng:114.299831},
+      {id:"J-05",name:"平和打包厂",year:"1918年",type:"建筑",play:"拼图修复",task:"打包厂遗稿",desc:"拼合老汉口工业建筑照片，还原打包厂历史",reward:"线索「工业记忆」",lat:30.582585,lng:114.297772},
+      {id:"J-06",name:"咸安坊",year:"1915年",type:"生活",play:"对比修复",task:"里份暗号",desc:"对比咸安坊老照片与现状，感受里份文化变迁",reward:"线索「里份密匙」",lat:30.582745,lng:114.295924},
+      {id:"J-07",name:"大智门火车站旧址",year:"1903年",type:"建筑",play:"拼图修复",task:"最后一班列车",desc:"拼合大智门火车站老照片，还原京汉铁路起点",reward:"线索「铁路先锋」",lat:30.594098,lng:114.297131}
     ]
   },
   {
@@ -345,12 +393,12 @@ const ROUTES = [
     reward:"勋章「首义先锋」",
     color:"#da3633",emoji:"✉️",
     points:[
-      {id:"H-11",name:"起义门",year:"1911年",type:"事件",play:"排序修复",task:"起义门号角",desc:"将武昌起义3个关键时刻按时间排序",reward:"情报「第一枪」",lat:30.525627,lng:114.307285},
-      {id:"H-12",name:"红楼",year:"1911年",type:"事件",play:"排序修复",task:"都督府密令",desc:"排列辛亥革命从起义到建都督府的时间线",reward:"情报「共和曙光」",lat:30.539175,lng:114.305584},
-      {id:"H-15",name:"中共五大会址",year:"1927年",type:"事件",play:"排序修复",task:"五大密档",desc:"排列中共早期革命历史事件时间线",reward:"情报「红色记忆」",lat:30.550933,lng:114.298459},
-      {id:"H-16",name:"农讲所",year:"1927年",type:"人物",play:"语音解谜",task:"农讲所课堂",desc:"聆听毛泽东在农讲所的故事，回答历史问题",reward:"情报「农民运动」",lat:30.55369,lng:114.300394},
-      {id:"H-19",name:"黄鹤楼",year:"223年",type:"建筑",play:"拼图修复",task:"登楼远眺",desc:"拼合历代黄鹤楼画作，感受「天下江山第一楼」",reward:"情报「江山胜迹」",lat:30.544649,lng:114.302467},
-      {id:"H-38",name:"得胜桥",year:"明清",type:"生活",play:"对比修复",task:"得胜暗号",desc:"对比得胜桥老街今昔，寻找隐藏的革命标语",reward:"情报「地下通道」",lat:30.549234,lng:114.30345}
+      {id:"J-08",name:"起义门",year:"1911年",type:"事件",play:"排序修复",task:"起义门号角",desc:"将武昌起义3个关键时刻按时间排序",reward:"情报「第一枪」",lat:30.525627,lng:114.307285},
+      {id:"J-09",name:"红楼",year:"1911年",type:"事件",play:"排序修复",task:"都督府密令",desc:"排列辛亥革命从起义到建都督府的时间线",reward:"情报「共和曙光」",lat:30.539175,lng:114.305584},
+      {id:"J-10",name:"黄鹤楼",year:"223年",type:"建筑",play:"拼图修复",task:"登楼远眺",desc:"拼合历代黄鹤楼画作，感受「天下江山第一楼」",reward:"情报「江山胜迹」",lat:30.544649,lng:114.302467},
+      {id:"J-11",name:"得胜桥",year:"明清",type:"生活",play:"对比修复",task:"得胜暗号",desc:"对比得胜桥老街今昔，寻找隐藏的革命标语",reward:"情报「地下通道」",lat:30.549234,lng:114.30345},
+      {id:"J-12",name:"中共五大会址",year:"1927年",type:"事件",play:"排序修复",task:"五大密档",desc:"排列中共早期革命历史事件时间线",reward:"情报「红色记忆」",lat:30.550933,lng:114.298459},
+      {id:"J-13",name:"农讲所",year:"1927年",type:"人物",play:"语音解谜",task:"农讲所课堂",desc:"聆听毛泽东在农讲所的故事，回答历史问题",reward:"情报「农民运动」",lat:30.55369,lng:114.300394}
     ]
   },
   {
@@ -360,12 +408,12 @@ const ROUTES = [
     reward:"徽章「工业考古学家」",
     color:"#3fb950",emoji:"⚒️",
     points:[
-      {id:"H-21",name:"晴川阁",year:"1547年",type:"建筑",play:"拼图修复",task:"晴川对诗",desc:"拼合晴川阁古画，还原「晴川历历汉阳树」意境",reward:"遗物「禹王碑刻」",lat:30.555551,lng:114.284786},
-      {id:"H-22",name:"古琴台",year:"北宋",type:"人物",play:"语音解谜",task:"高山流水",desc:"聆听伯牙子期知音故事，回答知音文化问题",reward:"遗物「知音琴谱」",lat:30.554339,lng:114.26379},
-      {id:"H-23",name:"归元寺",year:"1658年",type:"建筑",play:"拼图修复",task:"罗汉秘境",desc:"拼合归元寺罗汉堂老照片，还原佛教艺术",reward:"遗物「罗汉图谱」",lat:30.545268,lng:114.259018},
-      {id:"H-24",name:"汉阳造",year:"1890年",type:"建筑",play:"拼图修复",task:"兵工厂探秘",desc:"拼合汉阳兵工厂老照片，还原「东方克虏伯」",reward:"遗物「步枪图纸」",lat:30.556515,lng:114.268372},
-      {id:"H-26",name:"龟山电视塔",year:"1986年",type:"建筑",play:"对比修复",task:"龟山守望",desc:"对比龟山电视塔建设前后，见证城市天际线变迁",reward:"遗物「塔顶瞭望」",lat:30.555545,lng:114.280582},
-      {id:"H-28",name:"汉阳树",year:"明代",type:"生活",play:"对比修复",task:"古树寻踪",desc:"对比汉阳树500年变迁，感受时光流逝",reward:"遗物「年轮记忆」",lat:30.547917,lng:114.27084}
+      {id:"J-14",name:"晴川阁",year:"1547年",type:"建筑",play:"拼图修复",task:"晴川对诗",desc:"拼合晴川阁古画，还原「晴川历历汉阳树」意境",reward:"遗物「禹王碑刻」",lat:30.555551,lng:114.284786},
+      {id:"J-15",name:"龟山电视塔",year:"1986年",type:"建筑",play:"对比修复",task:"龟山守望",desc:"对比龟山电视塔建设前后，见证城市天际线变迁",reward:"遗物「塔顶瞭望」",lat:30.555545,lng:114.280582},
+      {id:"J-16",name:"汉阳造",year:"1890年",type:"建筑",play:"拼图修复",task:"兵工厂探秘",desc:"拼合汉阳兵工厂老照片，还原「东方克虏伯」",reward:"遗物「步枪图纸」",lat:30.556515,lng:114.268372},
+      {id:"J-17",name:"古琴台",year:"北宋",type:"人物",play:"语音解谜",task:"高山流水",desc:"聆听伯牙子期知音故事，回答知音文化问题",reward:"遗物「知音琴谱」",lat:30.554339,lng:114.26379},
+      {id:"J-18",name:"归元寺",year:"1658年",type:"建筑",play:"拼图修复",task:"罗汉秘境",desc:"拼合归元寺罗汉堂老照片，还原佛教艺术",reward:"遗物「罗汉图谱」",lat:30.545268,lng:114.259018},
+      {id:"J-19",name:"汉阳树",year:"明代",type:"生活",play:"对比修复",task:"古树寻踪",desc:"对比汉阳树500年变迁，感受时光流逝",reward:"遗物「年轮记忆」",lat:30.547917,lng:114.27084}
     ]
   },
   {
@@ -375,13 +423,12 @@ const ROUTES = [
     reward:"称号「古城守护者」",
     color:"#a371f7",emoji:"🖌️",
     points:[
-      {id:"H-29",name:"长江大桥",year:"1957年",type:"建筑",play:"拼图修复",task:"一桥飞架",desc:"拼合武汉长江大桥建设老照片，还原「万里长江第一桥」",reward:"碎片「钢铁长虹」",lat:30.547225,lng:114.292874},
-      {id:"H-30",name:"杨泗港大桥",year:"2019年",type:"建筑",play:"对比修复",task:"金色桥梁",desc:"对比杨泗港大桥与长江大桥，感受70年桥梁技术飞跃",reward:"碎片「现代奇迹」",lat:30.510951,lng:114.257402},
-      {id:"H-31",name:"昙华林",year:"明清",type:"生活",play:"对比修复",task:"文艺漫步",desc:"对比昙华林老街改造前后，感受古城新生",reward:"碎片「文艺新生」",lat:30.55194,lng:114.308791},
-      {id:"H-33",name:"翟雅阁",year:"1921年",type:"建筑",play:"拼图修复",task:"建筑探秘",desc:"拼合翟雅阁老照片，还原中西合璧建筑风格",reward:"碎片「中西合璧」",lat:30.550546,lng:114.314708},
-      {id:"H-37",name:"粮道街",year:"明清",type:"生活",play:"对比修复",task:"过早文化",desc:"对比粮道街早餐文化今昔，感受武汉烟火气",reward:"碎片「烟火记忆」",lat:30.547408,lng:114.310451},
-      {id:"H-39",name:"宝通寺",year:"南朝",type:"建筑",play:"拼图修复",task:"洪山古刹",desc:"拼合宝通寺与洪山宝塔老照片，还原千年古刹",reward:"碎片「佛塔禅音」",lat:30.530349,lng:114.341206},
-      {id:"H-40",name:"武汉大学",year:"1893年",type:"建筑",play:"对比修复",task:"珞珈寻樱",desc:"对比武大校园历史照片与现状，感受学府变迁",reward:"碎片「学府春秋」",lat:30.536243,lng:114.364514}
+      {id:"J-20",name:"长江大桥",year:"1957年",type:"建筑",play:"拼图修复",task:"一桥飞架",desc:"拼合武汉长江大桥建设老照片，还原「万里长江第一桥」",reward:"碎片「钢铁长虹」",lat:30.547225,lng:114.292874},
+      {id:"J-21",name:"昙华林",year:"明清",type:"生活",play:"对比修复",task:"文艺漫步",desc:"对比昙华林老街改造前后，感受古城新生",reward:"碎片「文艺新生」",lat:30.55194,lng:114.308791},
+      {id:"J-22",name:"翟雅阁",year:"1921年",type:"建筑",play:"拼图修复",task:"建筑探秘",desc:"拼合翟雅阁老照片，还原中西合璧建筑风格",reward:"碎片「中西合璧」",lat:30.550546,lng:114.314708},
+      {id:"J-23",name:"粮道街",year:"明清",type:"生活",play:"对比修复",task:"过早文化",desc:"对比粮道街早餐文化今昔，感受武汉烟火气",reward:"碎片「烟火记忆」",lat:30.547408,lng:114.310451},
+      {id:"J-24",name:"宝通寺",year:"南朝",type:"建筑",play:"拼图修复",task:"洪山古刹",desc:"拼合宝通寺与洪山宝塔老照片，还原千年古刹",reward:"碎片「佛塔禅音」",lat:30.530349,lng:114.341206},
+      {id:"J-25",name:"武汉大学",year:"1893年",type:"建筑",play:"对比修复",task:"珞珈寻樱",desc:"对比武大校园历史照片与现状，感受学府变迁",reward:"碎片「学府春秋」",lat:30.536243,lng:114.364514}
     ]
   }
 ];
@@ -420,12 +467,8 @@ function updateMap(route){
       html:'<div class="custom-marker'+(repaired?' repaired':'')+'" style="background:'+route.color+'">'+(repaired?'✓':route.emoji)+'</div>',
       iconSize:[32,32],iconAnchor:[16,16]
     });
-    var m=L.marker(latlng,{icon}).bindPopup(
-      '<div class="popup-name">'+pt.id+' '+pt.name+'</div>'+
-      '<div class="popup-id">'+pt.year+' · '+pt.type+' · '+pt.play+'</div>'+
-      '<div class="popup-task">'+pt.task+'</div>'+
-      (repaired?'<div style="color:#5B8C5A;font-size:11px;margin-top:4px">✅ 已修复</div>':'')
-    ).addTo(map);
+    var m=L.marker(latlng,{icon}).addTo(map);
+    m.on('click',function(){openSidePanel(pt,route);});
     currentMarkers.push(m);
   });
   if(latlngs.length>1){currentPolyline=L.polyline(latlngs,{color:route.color,weight:3,opacity:.6,dashArray:'8,6'}).addTo(map);}
@@ -456,11 +499,11 @@ function selectRoute(idx){
   rw.textContent='最终奖励：'+r.reward;
   rw.style.background='rgba(184,134,11,0.1)';rw.style.color='var(--blue-text)';
   document.getElementById('identityCard').style.borderColor=r.color+'44';
-  updateMap(r);renderPointsList(r);
+  updateMap(r);closeSidePanel();
 }
 
 /* ============================================================
-   POINTS LIST
+   SIDE PANEL
    ============================================================ */
 function getTypeClass(t){
   if(t==='建筑')return'type-building';if(t==='事件')return'type-event';
@@ -471,29 +514,31 @@ function getPlayClass(p){
   if(p==='语音解谜')return'play-voice';return'play-compare';
 }
 
-function renderPointsList(route){
-  var c=document.getElementById('pointsList');c.innerHTML='';
-  route.points.forEach(function(pt,i){
-    var repaired=isRepaired(pt.id);
-    var card=document.createElement('div');
-    card.className='point-card'+(repaired?' repaired':'');
-    card.innerHTML=
-      '<div class="pc-top">'+
-        '<span class="pc-id">'+pt.id+'</span>'+
-        (repaired?'<span class="pc-repair-badge">✓ 已修复</span>':'')+
-      '</div>'+
-      '<div class="pc-name">'+pt.name+' <span style="font-size:11px;color:var(--text-muted)">('+pt.year+')</span></div>'+
-      '<div class="pc-tags">'+
-        '<span class="pc-tag '+getTypeClass(pt.type)+'">'+pt.type+'</span>'+
-        '<span class="pc-tag '+getPlayClass(pt.play)+'">'+pt.play+'</span>'+
-      '</div>'+
-      '<div class="pc-task">'+pt.task+'</div>'+
-      '<div class="pc-desc">'+pt.desc+'</div>'+
-      '<div class="pc-reward">🏆 '+pt.reward+'</div>'+
-      '<button class="pc-btn'+(repaired?' done':'')+'" onclick="event.stopPropagation();openGameModal(\''+pt.id+'\')">'+(repaired?'✅ 已修复':'🔧 开始修复')+'</button>';
-    card.onclick=function(){map.setView([pt.lat,pt.lng],16);if(currentMarkers[i])currentMarkers[i].openPopup();};
-    c.appendChild(card);
-  });
+function openSidePanel(pt,route){
+  var repaired=isRepaired(pt.id);
+  var panel=document.getElementById('sidePanel');
+  var overlay=document.getElementById('sidePanelOverlay');
+  var content=document.getElementById('sidePanelContent');
+  content.innerHTML=
+    '<span class="sp-id">'+pt.id+'</span>'+
+    (repaired?'<span class="sp-repaired">✓ 已修复</span>':'')+
+    '<div class="sp-name">'+pt.name+'</div>'+
+    '<div class="sp-year">'+pt.year+'</div>'+
+    '<div class="sp-tags">'+
+      '<span class="sp-tag '+getTypeClass(pt.type)+'">'+pt.type+'</span>'+
+      '<span class="sp-tag '+getPlayClass(pt.play)+'">'+pt.play+'</span>'+
+    '</div>'+
+    '<div class="sp-task">📋 '+pt.task+'</div>'+
+    '<div class="sp-desc">'+pt.desc+'</div>'+
+    '<div class="sp-reward">🏆 '+pt.reward+'</div>'+
+    '<button class="sp-btn'+(repaired?' done':'')+'" onclick="openGameModal(\''+pt.id+'\')">'+(repaired?'✅ 已修复':'🔧 开始修复')+'</button>';
+  panel.classList.add('open');
+  overlay.classList.add('show');
+}
+
+function closeSidePanel(){
+  document.getElementById('sidePanel').classList.remove('open');
+  document.getElementById('sidePanelOverlay').classList.remove('show');
 }
 
 /* ============================================================
@@ -591,19 +636,19 @@ function buildPuzzleGame(gc,pt,setBtnDone){
 /* ---- SORT ---- */
 function buildSortGame(gc,pt,setBtnDone){
   var events=[];
-  if(pt.id==='H-11'){
+  if(pt.id==='J-08'){
     events=[
       {year:'1911年10月9日',desc:'起义计划泄露，彭楚藩等三人被捕就义'},
       {year:'1911年10月10日',desc:'武昌起义第一枪在工程营打响'},
       {year:'1911年10月11日',desc:'湖北军政府成立，推举黎元洪为都督'}
     ];
-  }else if(pt.id==='H-12'){
+  }else if(pt.id==='J-09'){
     events=[
       {year:'1911年10月10日',desc:'武昌起义爆发'},
       {year:'1911年10月11日',desc:'湖北军政府（红楼）成立'},
       {year:'1912年1月1日',desc:'中华民国成立，孙中山就任临时大总统'}
     ];
-  }else if(pt.id==='H-15'){
+  }else if(pt.id==='J-12'){
     events=[
       {year:'1921年7月',desc:'中共一大在上海召开'},
       {year:'1927年4月',desc:'中共五大在武汉召开'},
@@ -665,10 +710,10 @@ window.selectSortItem=function(idx,yearStr){
 function buildVoiceGame(gc,pt,setBtnDone){
   var played=false;
   var question,options,correctAns;
-  if(pt.id==='H-16'){
+  if(pt.id==='J-13'){
     question='毛泽东在武昌农讲所主要培养的是哪类人才？';
     options=['军事指挥人才','农民运动骨干','工业技术人才'];correctAns=1;
-  }else if(pt.id==='H-22'){
+  }else if(pt.id==='J-17'){
     question='"高山流水"故事中，钟子期听出了伯牙琴声中的什么意境？';
     options=['高山和流水','战场和厮杀','田园和牧歌'];correctAns=0;
   }else{
@@ -740,6 +785,30 @@ function buildCompareGame(gc,pt,setBtnDone){
 }
 
 /* ============================================================
+   THEORY POPUP
+   ============================================================ */
+var THEORY_DATA=[
+  {title:'可玩城市（Playable City）',content:'将城市空间转化为游戏化场域，让市民在探索中体验城市历史的层次感。通过游戏化的方式，打破传统城市游览的单向信息接收模式，让市民成为城市历史的主动发现者和共同创造者。'},
+  {title:'地图叙事（Map Narrative）',content:'地图作为故事载体，每一条路线串联起一段历史叙事，25个点位构成武汉1800年的完整故事链。将地理信息与历史叙事相融合，让空间本身成为讲述城市记忆的媒介。'},
+  {title:'参与式营造（Participatory Placemaking）',content:'用户通过"修复"历史碎片的行为，参与城市记忆的共同生产，强化对地方的认同与归属感。以互动行为重新连接市民与城市空间，激发自下而上的地方营造动力。'},
+  {title:'多层交互（Multi-layer Interaction）',content:'历史/青年/美食/生态四层空间的游戏化建构，让城市成为一个可被"阅读"的立体文本。不同层次的交互方式对应不同的城市体验维度，实现城市文化的深度发掘与多元化呈现。'}
+];
+
+function openTheoryPopup(idx){
+  var data=THEORY_DATA[idx];
+  var popup=document.getElementById('theoryPopup');
+  popup.innerHTML=
+    '<button class="tp-close" onclick="closeTheoryPopup()">✕</button>'+
+    '<div class="tp-title">'+(idx+1)+'. '+data.title+'</div>'+
+    '<div class="tp-content">'+data.content+'</div>';
+  document.getElementById('theoryPopupOverlay').classList.add('show');
+}
+
+function closeTheoryPopup(){
+  document.getElementById('theoryPopupOverlay').classList.remove('show');
+}
+
+/* ============================================================
    ARCHIVE
    ============================================================ */
 function openArchive(){
@@ -787,7 +856,6 @@ function updateProgress(){
   var cnt=getRepairedCount();
   document.getElementById('progressDone').textContent=cnt;
   document.getElementById('progressBar').style.width=((cnt/25)*100)+'%';
-  document.getElementById('totalPoints').textContent=25;
 }
 
 /* ============================================================
