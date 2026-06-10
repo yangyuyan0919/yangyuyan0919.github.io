@@ -4,1590 +4,804 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>江城往事 — 时间修复师</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ============================================================
    CSS RESET & DESIGN TOKENS
    ============================================================ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --paper:#F5EFE6;--paper-dark:#E0D5C5;--ink:#2C1810;--ink-light:#5C4A3A;--ink-faint:#9A8A7A;
-  --gold:#C8963E;--success:#5A8F5A;--accent:#D4A574;--danger:#C75B39;
-  --route-kb:#8B4513;--route-sy:#C75B39;--route-hy:#708090;--route-gc:#5F9EA0;
-  --header-h:50px;--tab-h:44px;--bottom-h:54px;--radius:10px;
-  --font-display:"Noto Serif SC","STSong","Songti SC",serif;
-  --font-body:"PingFang SC","Microsoft YaHei",sans-serif;
-  --shadow-card:0 4px 20px rgba(0,0,0,.08);
+  --bg:#FAF0E6;--card-bg:#FFF8F0;--border:#D4C5B2;--border-dim:#E0D5C5;
+  --text-main:#3C2F28;--text-body:#4A3B33;--text-muted:#6B5D4F;--text-faint:#9B8D7F;
+  --blue:#B8860B;--blue-hover:#D4A030;--blue-text:#8B6914;
+  --green:#5B8C5A;--orange:#D4843A;--red:#C45A4A;--purple:#7B6BA6;
+  --h1-color:var(--orange);--h2-color:var(--red);--h3-color:var(--green);--h4-color:var(--purple);
 }
-html,body{
-  height:100%;width:100%;overflow:hidden;
-  font-family:var(--font-body);color:var(--ink);background:var(--paper);
-  -webkit-tap-highlight-color:transparent;
+body{
+  font-family:"KaiTi","STKaiti","PingFang SC","Microsoft YaHei","Noto Sans SC",serif;
+  background:var(--bg);color:var(--text-body);overflow-x:hidden;min-height:100vh;
+  background-image:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
 }
-button,input,textarea,select{font-family:inherit;color:inherit}
-button{border:none;cursor:pointer;background:none}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--ink-faint);border-radius:2px}
-
-/* ============================================================
-   OPENING SCREEN
-   ============================================================ */
-#openingScreen{
-  position:fixed;inset:0;z-index:9999;
+/* ---- header ---- */
+.header{
+  background:linear-gradient(135deg,#F5EDE0 0%,#EDE1D0 100%);
+  padding:18px 20px 14px;border-bottom:2px solid #D4C5B2;
+  position:relative;overflow:hidden;
+}
+.header::before{
+  content:"";position:absolute;top:0;left:0;right:0;bottom:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B6914' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity:0.8;
+}
+.header-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+.header-top h1{font-size:28px;font-weight:700;color:var(--text-main);letter-spacing:6px;font-family:"KaiTi","STKaiti",serif}
+.header-role{font-size:13px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:5px 14px;border-radius:20px;letter-spacing:2px;border:1px solid rgba(184,134,11,0.2)}
+.header-progress{margin-top:12px;position:relative;z-index:1;display:flex;align-items:center;gap:10px}
+.progress-bar-outer{flex:1;height:8px;background:var(--border-dim);border-radius:4px;overflow:hidden}
+.progress-bar-inner{height:100%;background:var(--blue);border-radius:4px;transition:width .5s ease;width:0%}
+.progress-text{font-size:13px;color:var(--text-muted);white-space:nowrap}
+.progress-text .done{color:var(--green);font-weight:700}
+/* ---- route selector ---- */
+.route-selector{
+  display:flex;gap:10px;padding:12px 16px;background:var(--card-bg);
+  border-bottom:1px solid var(--border-dim);overflow-x:auto;scrollbar-width:none;
+}
+.route-selector::-webkit-scrollbar{display:none}
+.route-tab{
+  flex-shrink:0;padding:8px 16px;border-radius:8px;background:#F5EDE0;
+  border:1px solid var(--border);cursor:pointer;transition:all .25s ease;
+  min-width:125px;text-align:center;position:relative;
+}
+.route-tab:hover{background:#EDE1D0;border-color:var(--blue-text)}
+.route-tab.active{border-color:currentColor;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.route-tab[data-route="0"]{color:var(--h1-color)}
+.route-tab[data-route="1"]{color:var(--h2-color)}
+.route-tab[data-route="2"]{color:var(--h3-color)}
+.route-tab[data-route="3"]{color:var(--h4-color)}
+.route-tab .tab-name{font-size:13px;font-weight:600}
+.route-tab .tab-theme{font-size:11px;opacity:.75;margin-top:2px}
+.route-tab .tab-emoji{font-size:16px;margin-right:4px}
+/* ---- identity card ---- */
+.identity-card{
+  margin:12px 16px;padding:16px 18px;background:var(--card-bg);
+  border-radius:10px;border:1px solid var(--border-dim);position:relative;overflow:hidden;
+  transition:border-color .3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+.identity-card .id-title{font-size:11px;color:var(--blue-text);letter-spacing:2px;margin-bottom:6px}
+.identity-card .id-name{font-size:18px;font-weight:700;color:var(--text-main);margin-bottom:6px}
+.identity-card .id-desc{font-size:12px;color:var(--text-muted);line-height:1.6}
+.identity-card .id-reward{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+/* ---- map ---- */
+.map-section{margin:0 16px 12px;border-radius:10px;overflow:hidden;border:1px solid var(--border-dim);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+#map{width:100%;height:380px}
+.custom-marker-container{background:transparent!important;border:none!important}
+.custom-marker{
+  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
+  transition:all .3s;
+}
+.custom-marker.repaired{opacity:.6;border-color:var(--green)}
+/* ---- points list ---- */
+.points-section{padding:0 16px 12px}
+.section-title{font-size:15px;font-weight:600;color:var(--text-main);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.section-title::before{content:"";display:inline-block;width:4px;height:16px;background:var(--blue);border-radius:2px}
+.point-card{
+  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:8px;
+  padding:14px;margin-bottom:10px;cursor:pointer;transition:all .25s ease;
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
+}
+.point-card:hover{border-color:var(--blue);box-shadow:0 2px 12px rgba(184,134,11,0.1)}
+.point-card.repaired{border-color:var(--green);background:rgba(91,140,90,0.06)}
+.point-card .pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.point-card .pc-id{font-size:10px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:2px 6px;border-radius:3px;font-family:"KaiTi","STKaiti",serif}
+.point-card .pc-repair-badge{font-size:10px;color:var(--green);background:rgba(91,140,90,0.1);padding:2px 6px;border-radius:3px}
+.point-card .pc-name{font-size:15px;font-weight:600;color:var(--text-main)}
+.point-card .pc-tags{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
+.pc-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+.pc-tag.type-building{background:rgba(212,132,58,0.12);color:var(--orange)}
+.pc-tag.type-event{background:rgba(196,90,74,0.12);color:var(--red)}
+.pc-tag.type-person{background:rgba(123,107,166,0.12);color:var(--purple)}
+.pc-tag.type-life{background:rgba(91,140,90,0.12);color:var(--green)}
+.pc-tag.play-puzzle{background:rgba(184,134,11,0.12);color:var(--blue-text)}
+.pc-tag.play-sort{background:rgba(196,90,74,0.12);color:var(--red)}
+.pc-tag.play-voice{background:rgba(123,107,166,0.12);color:var(--purple)}
+.pc-tag.play-compare{background:rgba(91,140,90,0.12);color:var(--green)}
+.point-card .pc-task{font-size:12px;color:var(--orange);font-weight:600;margin-top:6px}
+.point-card .pc-desc{font-size:11px;color:var(--text-muted);margin-top:3px;line-height:1.5}
+.point-card .pc-reward{font-size:11px;color:var(--green);margin-top:6px}
+.point-card .pc-btn{
+  margin-top:8px;padding:6px 16px;border-radius:6px;border:1px solid var(--blue);font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .2s;background:var(--blue);color:#fff;
+}
+.point-card .pc-btn:hover{background:var(--blue-hover);border-color:var(--blue-hover)}
+.point-card .pc-btn.done{background:var(--green);border-color:var(--green);pointer-events:none}
+/* ---- modal ---- */
+.modal-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.6);
+  z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;
+}
+.modal-box{
+  background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
+  width:100%;max-width:440px;max-height:85vh;overflow-y:auto;padding:20px;
+  box-shadow:0 8px 32px rgba(0,0,0,.12);
+}
+.modal-box h3{font-size:17px;color:var(--text-main);margin-bottom:4px}
+.modal-box .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:14px}
+.modal-close{
+  float:right;background:none;border:none;color:var(--text-muted);font-size:22px;
+  cursor:pointer;line-height:1;
+}
+/* puzzle */
+.puzzle-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;width:240px;height:240px;margin:10px auto}
+.puzzle-slot{border:2px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:40px;transition:all .3s;background:rgba(245,237,224,0.5)}
+.puzzle-slot.filled{border-color:var(--green);background:rgba(91,140,90,0.08)}
+.puzzle-pieces{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.puzzle-piece{width:54px;height:54px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:grab;background:#F5EDE0;transition:all .2s}
+.puzzle-piece:active{cursor:grabbing}
+.puzzle-piece.placed{opacity:.3;pointer-events:none}
+/* sort */
+.sort-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.sort-item{padding:12px;border:2px solid var(--border-dim);border-radius:8px;cursor:pointer;background:#F5EDE0;transition:all .2s;text-align:center}
+.sort-item:hover{border-color:var(--blue)}
+.sort-item.selected{border-color:var(--blue);background:rgba(184,134,11,0.08)}
+.sort-item.correct{border-color:var(--green)!important;background:rgba(91,140,90,0.08)!important}
+.sort-item.wrong{border-color:var(--red)!important;animation:shake .5s}
+.sort-item .sort-year{font-size:11px;color:var(--text-muted)}
+.sort-item .sort-desc{font-size:13px;color:var(--text-body);margin-top:2px}
+.sort-pick-order{font-size:11px;color:var(--blue-text);margin-top:6px;min-height:18px}
+/* voice */
+.voice-player{text-align:center;margin:16px 0}
+.voice-btn{width:72px;height:72px;border-radius:50%;border:2px solid var(--blue);background:rgba(184,134,11,0.08);cursor:pointer;font-size:32px;transition:all .2s}
+.voice-btn:hover{background:rgba(184,134,11,0.15)}
+.voice-btn.playing{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(184,134,11,.4)}50%{box-shadow:0 0 0 16px rgba(184,134,11,0)}}
+.voice-status{font-size:12px;color:var(--text-muted);margin-top:8px}
+.voice-question{margin-top:12px;font-size:13px;color:var(--text-body)}
+.voice-options{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.voice-opt{padding:10px;border:1px solid var(--border-dim);border-radius:6px;cursor:pointer;background:#F5EDE0;font-size:12px;text-align:center;transition:all .2s}
+.voice-opt:hover{border-color:var(--blue)}
+.voice-opt.correct{border-color:var(--green)!important;background:rgba(91,140,90,0.08)!important}
+.voice-opt.wrong{border-color:var(--red)!important;animation:shake .5s}
+/* compare */
+.compare-container{position:relative;width:100%;height:220px;border-radius:8px;overflow:hidden;margin:10px 0}
+.compare-old,.compare-new{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px}
+.compare-old{background:#EDE1D0;z-index:1;color:var(--text-body)}
+.compare-new{background:#E8F0E8;clip-path:inset(0 50% 0 0);z-index:2;color:var(--text-body)}
+.compare-label{font-size:11px;color:var(--text-muted);margin-top:6px}
+.compare-handle{
+  position:absolute;top:0;bottom:0;width:4px;background:var(--blue);
+  left:50%;transform:translateX(-50%);z-index:3;cursor:ew-resize;
+}
+.compare-handle::after{content:"◀▶";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--blue);color:#fff;font-size:12px;padding:6px 4px;border-radius:4px;white-space:nowrap}
+/* modal button */
+.modal-btn{
+  display:block;width:100%;margin-top:14px;padding:12px;border-radius:8px;border:none;
+  font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;
+  background:var(--border-dim);color:var(--text-muted);
+}
+.modal-btn.active{background:var(--blue);color:#fff}
+.modal-btn.active:hover{background:var(--blue-hover)}
+.modal-btn.done{background:var(--green);color:#fff;pointer-events:none}
+/* success overlay */
+.success-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.9);
+  z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.success-icon{font-size:64px;animation:bounceIn .6s ease}
+@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.success-title{font-size:24px;color:var(--green);font-weight:700;margin-top:12px}
+.success-reward{font-size:14px;color:var(--text-body);margin-top:8px}
+/* archive button */
+.archive-btn{
+  position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;
+  background:var(--blue);border:2px solid var(--blue-hover);cursor:pointer;
+  font-size:28px;color:#fff;z-index:500;box-shadow:0 4px 16px rgba(184,134,11,.3);
+  display:flex;align-items:center;justify-content:center;transition:all .3s;
+}
+.archive-btn:hover{background:var(--blue-hover);transform:scale(1.08)}
+.archive-btn .badge{
+  position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;
+  font-size:10px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+/* archive modal */
+.archive-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(250,240,230,.97);
+  z-index:1500;overflow-y:auto;padding:20px 16px;
+}
+.archive-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.archive-header h3{font-size:20px;color:var(--text-main)}
+.archive-close{background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer}
+.archive-progress{margin-bottom:16px}
+.archive-route-progress{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--text-muted)}
+.archive-route-progress .rp-name{min-width:100px;font-weight:600}
+.archive-route-progress .rp-bar{flex:1;height:6px;background:var(--border-dim);border-radius:3px;overflow:hidden}
+.archive-route-progress .rp-bar-inner{height:100%;border-radius:3px;transition:width .5s}
+.archive-route-progress .rp-num{min-width:36px;text-align:right}
+.archive-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.archive-card{
+  aspect-ratio:3/4;border-radius:8px;border:1px solid var(--border-dim);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:linear-gradient(160deg,#1a0a00 0%,#2C1810 30%,#3d2010 60%,#1a0a00 100%);
-  transition:opacity .6s,visibility .6s;
-}
-#openingScreen.hidden{opacity:0;visibility:hidden;pointer-events:none}
-.opening-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.opening-particle{
-  position:absolute;width:2px;height:2px;background:var(--gold);
-  border-radius:50%;animation:float-up 4s linear infinite;opacity:0;
-}
-@keyframes float-up{
-  0%{transform:translateY(100vh) scale(0);opacity:0}
-  10%{opacity:.8}
-  90%{opacity:.2}
-  100%{transform:translateY(-10vh) scale(1);opacity:0}
-}
-.opening-logo{
-  position:relative;z-index:1;text-align:center;margin-bottom:30px;
-}
-.opening-logo .main-title{
-  font-family:var(--font-display);font-size:42px;font-weight:900;color:var(--gold);
-  letter-spacing:8px;text-shadow:0 0 40px rgba(200,150,60,.4);
-  animation:title-enter 1s ease;
-}
-@keyframes title-enter{
-  from{opacity:0;letter-spacing:20px;filter:blur(10px)}
-  to{opacity:1;letter-spacing:8px;filter:blur(0)}
-}
-.opening-logo .sub-title{
-  font-size:14px;color:#9A8A7A;letter-spacing:3px;margin-top:8px;
-  font-family:var(--font-display);animation:fade-in 1s .3s both;
-}
-.opening-logo .tagline{
-  font-size:12px;color:#7A6A5A;margin-top:14px;letter-spacing:1px;
-  animation:fade-in 1s .6s both;
-}
-@keyframes fade-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.opening-prompt{
-  position:relative;z-index:1;color:#9A8A7A;font-size:13px;
-  margin-bottom:20px;letter-spacing:2px;animation:fade-in 1s .8s both;
-}
-.role-grid{
-  position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;
-  width:90%;max-width:440px;padding:0 16px;animation:fade-in 1s 1s both;
-}
-.role-card{
-  padding:18px 14px;border-radius:14px;cursor:pointer;
-  text-align:center;transition:all .35s cubic-bezier(.4,0,.2,1);
-  border:2px solid transparent;position:relative;overflow:hidden;
-}
-.role-card::before{
-  content:'';position:absolute;inset:0;opacity:.08;transition:opacity .35s;
-}
-.role-card:hover,.role-card:focus-visible{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.role-card:hover::before,.role-card:focus-visible::before{opacity:.16}
-.role-card.kb{background:rgba(139,69,19,.12);border-color:rgba(139,69,19,.3)}
-.role-card.kb::before{background:var(--route-kb)}
-.role-card.kb:hover,.role-card.kb.selected{border-color:var(--route-kb);background:rgba(139,69,19,.2)}
-.role-card.sy{background:rgba(199,91,57,.12);border-color:rgba(199,91,57,.3)}
-.role-card.sy::before{background:var(--route-sy)}
-.role-card.sy:hover,.role-card.sy.selected{border-color:var(--route-sy);background:rgba(199,91,57,.2)}
-.role-card.hy{background:rgba(112,128,144,.12);border-color:rgba(112,128,144,.3)}
-.role-card.hy::before{background:var(--route-hy)}
-.role-card.hy:hover,.role-card.hy.selected{border-color:var(--route-hy);background:rgba(112,128,144,.2)}
-.role-card.gc{background:rgba(95,158,160,.12);border-color:rgba(95,158,160,.3)}
-.role-card.gc::before{background:var(--route-gc)}
-.role-card.gc:hover,.role-card.gc.selected{border-color:var(--route-gc);background:rgba(95,158,160,.2)}
-.role-emoji{font-size:36px;display:block;margin-bottom:6px;position:relative;z-index:1}
-.role-name{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:1px;font-family:var(--font-display);position:relative;z-index:1}
-.role-route-name{font-size:11px;color:#7A6A5A;margin-top:2px;position:relative;z-index:1}
-.role-desc{font-size:10px;color:#8A7A6A;margin-top:6px;line-height:1.4;position:relative;z-index:1}
-
-/* ============================================================
-   MAIN SCREEN
-   ============================================================ */
-#mainScreen{position:fixed;inset:0;opacity:0;visibility:hidden;transition:opacity .5s;}
-#mainScreen.visible{opacity:1;visibility:visible}
-
-/* ============================================================
-   HEADER
-   ============================================================ */
-#header{
-  position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);
-  display:flex;align-items:center;padding:0 12px;gap:8px;
-  background:linear-gradient(180deg,rgba(245,239,230,.98),rgba(245,239,230,.9));
-  backdrop-filter:blur(12px);border-bottom:1px solid rgba(139,69,19,.1);
-}
-.header-identity{
-  display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:16px;
-  font-size:12px;font-weight:700;letter-spacing:.5px;font-family:var(--font-display);
-  border:1.5px solid currentColor;white-space:nowrap;
-}
-.header-title{
-  font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:1px;
-  color:var(--ink);white-space:nowrap;flex-shrink:0;
-}
-.header-progress{
-  margin-left:auto;display:flex;align-items:center;gap:5px;
-  font-size:11px;color:var(--ink-light);white-space:nowrap;
-}
-.header-progress strong{color:var(--gold);font-size:15px;font-family:var(--font-display)}
-.header-progress-bar{width:46px;height:5px;background:var(--paper-dark);border-radius:3px;overflow:hidden}
-.header-progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--route-sy));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1)}
-
-/* ============================================================
-   ROUTE TABS
-   ============================================================ */
-#routeTabs{
-  position:fixed;top:var(--header-h);left:0;right:0;z-index:99;height:var(--tab-h);
-  display:flex;align-items:center;gap:4px;padding:0 8px;
-  background:linear-gradient(180deg,rgba(245,239,230,.96),rgba(245,239,230,.86));
-  backdrop-filter:blur(12px);overflow-x:auto;overflow-y:hidden;
-}
-.tab-btn{
-  flex-shrink:0;display:flex;align-items:center;gap:4px;padding:6px 10px;
-  border-radius:16px;font-size:11px;font-weight:600;letter-spacing:.3px;
-  background:rgba(0,0,0,.03);color:var(--ink-light);
-  transition:all .3s cubic-bezier(.4,0,.2,1);
-  border:1.5px solid transparent;white-space:nowrap;font-family:var(--font-display);
-}
-.tab-btn .tab-icon{font-size:13px}
-.tab-btn .tab-count{font-size:9px;opacity:.6}
-.tab-btn:hover{background:rgba(0,0,0,.06)}
-.tab-btn.active{color:#fff!important;background:var(--route-bg)!important;border-color:var(--route-bg)!important;box-shadow:0 2px 10px var(--route-shadow)}
-.tab-btn.route-kb{--route-bg:var(--route-kb);--route-shadow:rgba(139,69,19,.25)}
-.tab-btn.route-sy{--route-bg:var(--route-sy);--route-shadow:rgba(199,91,57,.25)}
-.tab-btn.route-hy{--route-bg:var(--route-hy);--route-shadow:rgba(112,128,144,.25)}
-.tab-btn.route-gc{--route-bg:var(--route-gc);--route-shadow:rgba(95,158,160,.25)}
-
-/* ============================================================
-   MAP
-   ============================================================ */
-#mapContainer{
-  position:fixed;top:calc(var(--header-h) + var(--tab-h));left:0;right:0;bottom:var(--bottom-h);
-  background:var(--paper);
-}
-#amap{width:100%;height:100%}
-
-.history-pin{
-  width:42px;height:42px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:20px;color:#fff;cursor:pointer;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
-  position:relative;user-select:none;font-weight:700;
-}
-.history-pin:hover{transform:scale(1.3);z-index:999}
-.history-pin.locked{background:#9A8A7A!important;border:2px solid #CCC!important;box-shadow:none!important;color:#ddd!important}
-.history-pin.unlocked{box-shadow:0 0 14px currentColor;animation:pin-glow 2.5s ease-in-out infinite}
-@keyframes pin-glow{0%,100%{box-shadow:0 0 4px currentColor}50%{box-shadow:0 0 18px currentColor,0 0 28px currentColor}}
-
-/* ============================================================
-   BOTTOM BAR
-   ============================================================ */
-#bottomBar{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;height:var(--bottom-h);
-  display:flex;align-items:center;gap:8px;padding:0 10px;
-  background:linear-gradient(0deg,rgba(245,239,230,.98),rgba(245,239,230,.9));
-  backdrop-filter:blur(12px);border-top:1px solid rgba(139,69,19,.1);
-}
-.bottom-hint{font-size:10px;color:var(--ink-light);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-display)}
-.bottom-hint strong{color:var(--route-color,var(--ink))}
-.btn-archive,.btn-theory{
-  flex-shrink:0;padding:7px 12px;border-radius:14px;font-size:11px;font-weight:600;letter-spacing:.5px;
-  transition:all .3s;white-space:nowrap;font-family:var(--font-display);
-  display:flex;align-items:center;gap:4px;
-}
-.btn-archive{background:rgba(200,150,60,.1);color:var(--gold);border:1px solid rgba(200,150,60,.3)}
-.btn-archive:hover{background:rgba(200,150,60,.2)}
-.btn-theory{background:rgba(0,0,0,.04);color:var(--ink-light);border:1px solid rgba(0,0,0,.1)}
-.btn-theory:hover{background:rgba(0,0,0,.08)}
-
-/* ============================================================
-   DETAIL OVERLAY
-   ============================================================ */
-#detailOverlay{
-  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.4);
-  display:flex;align-items:flex-end;justify-content:center;
-  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
-}
-#detailOverlay.show{opacity:1;visibility:visible}
-#detailCard{
-  width:100%;max-width:500px;max-height:92vh;overflow-y:auto;
-  background:linear-gradient(180deg,#FCF9F2,#F5EFE6);
-  border-radius:20px 20px 0 0;border-top:3px solid var(--route-color,var(--ink));
-  box-shadow:0 -8px 32px rgba(0,0,0,.12);
-  transition:transform .4s cubic-bezier(.4,0,.2,1);
-  transform:translateY(20px);
-}
-#detailOverlay.show #detailCard{transform:translateY(0)}
-.card-header{padding:18px 18px 0;display:flex;align-items:flex-start;gap:10px}
-.card-type-tag{
-  display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:10px;
-  font-size:10px;font-weight:700;letter-spacing:.5px;font-family:var(--font-display);
-}
-.card-type-tag.puzzle{background:rgba(139,69,19,.1);color:var(--route-kb)}
-.card-type-tag.sort{background:rgba(199,91,57,.1);color:var(--route-sy)}
-.card-type-tag.voice{background:rgba(95,158,160,.1);color:var(--route-gc)}
-.card-type-tag.compare{background:rgba(112,128,144,.1);color:var(--route-hy)}
-.card-name{font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:1px;flex:1}
-.card-year{font-size:12px;color:var(--ink-light);margin-top:1px;font-family:var(--font-display)}
-.card-close{
-  width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.05);
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-  color:var(--ink-light);transition:all .2s;flex-shrink:0;
-}
-.card-close:hover{background:rgba(0,0,0,.12)}
-
-.card-body{padding:12px 18px 18px}
-.card-story{font-size:12px;line-height:1.7;color:var(--ink-light);margin-bottom:12px;font-family:var(--font-display)}
-
-/* Game Area */
-.game-area{
-  margin:12px 0;padding:14px;border-radius:var(--radius);
-  background:rgba(0,0,0,.025);border:1px solid rgba(0,0,0,.06);
-}
-.game-label{
-  font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:10px;
-  display:flex;align-items:center;gap:6px;color:var(--ink);
-}
-
-/* -- PUZZLE -- */
-.puzzle-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:4px;
-  width:100%;max-width:280px;margin:0 auto 8px;aspect-ratio:1;
-  border:2px dashed #ccc;border-radius:8px;position:relative;overflow:hidden;
-}
-.puzzle-slot{
-  background:rgba(0,0,0,.03);position:relative;transition:all .3s;
-  border:1px solid rgba(0,0,0,.06);
-}
-.puzzle-slot.filled{border-color:var(--success);background:rgba(90,143,90,.05)}
-.puzzle-pieces{
-  display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:280px;margin:0 auto;
-}
-.puzzle-piece{
-  aspect-ratio:1;border-radius:6px;cursor:grab;border:2px solid rgba(0,0,0,.12);
-  background-size:200% 200%;transition:all .2s;position:relative;
-}
-.puzzle-piece:active{cursor:grabbing;transform:scale(.95)}
-.puzzle-piece.dragging{opacity:.5;transform:scale(.9)}
-.puzzle-piece.placed{opacity:.3;pointer-events:none;border-style:dashed}
-
-/* -- SORT -- */
-.sort-list{
-  display:flex;flex-direction:column;gap:8px;max-width:320px;margin:0 auto;
-}
-.sort-item{
-  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
-  background:rgba(0,0,0,.04);cursor:pointer;transition:all .25s;
-  border:2px solid transparent;font-family:var(--font-display);
-}
-.sort-item:hover{border-color:var(--gold);background:rgba(200,150,60,.05)}
-.sort-item.selected{border-color:var(--gold);background:rgba(200,150,60,.1)}
-.sort-item.correct{border-color:var(--success)!important;background:rgba(90,143,90,.08)!important}
-.sort-item.wrong{border-color:var(--danger)!important;background:rgba(199,91,57,.08)!important;animation:shake .5s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.sort-item-num{font-family:Georgia,serif;font-size:20px;font-weight:900;color:var(--gold);min-width:28px}
-.sort-item-img{
-  width:50px;height:50px;border-radius:8px;background-size:cover;background-position:center;
-  flex-shrink:0;border:1px solid rgba(0,0,0,.08);
-}
-.sort-item-label{font-size:11px;color:var(--ink-light);margin-top:2px}
-.sort-status{text-align:center;font-size:12px;margin-top:8px;font-family:var(--font-display);min-height:20px}
-.sort-btn{
-  display:block;margin:8px auto 0;padding:8px 24px;border-radius:12px;
-  font-weight:700;font-size:12px;letter-spacing:.5px;
-  background:var(--gold);color:#fff;transition:all .3s;font-family:var(--font-display);
-}
-.sort-btn:hover{opacity:.9;transform:translateY(-1px)}
-.sort-btn:disabled{opacity:.5;pointer-events:none}
-
-/* -- VOICE -- */
-.voice-player{
-  display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);
-  background:rgba(95,158,160,.08);border:1px solid rgba(95,158,160,.2);
-}
-.btn-play{
-  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:20px;transition:all .3s;flex-shrink:0;
-}
-.btn-play.idle{background:var(--route-gc);color:#fff}
-.btn-play.playing{background:var(--danger);color:#fff;animation:pulse-play .8s ease-in-out infinite}
-@keyframes pulse-play{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.voice-info{font-size:11px;color:var(--ink-light);line-height:1.5}
-.voice-info strong{color:var(--ink);font-family:var(--font-display)}
-.voice-quiz{margin-top:10px}
-.voice-quiz .quiz-q{font-size:13px;font-weight:700;margin-bottom:8px;font-family:var(--font-display)}
-.quiz-options{display:flex;flex-direction:column;gap:6px}
-.quiz-option{
-  padding:9px 12px;border-radius:8px;font-size:12px;cursor:pointer;
-  background:rgba(0,0,0,.03);border:1.5px solid transparent;transition:all .25s;
-  text-align:left;font-family:var(--font-display);
-}
-.quiz-option:hover{border-color:var(--gold);background:rgba(200,150,60,.05)}
-.quiz-option.chosen-correct{border-color:var(--success)!important;background:rgba(90,143,90,.1)!important}
-.quiz-option.chosen-wrong{border-color:var(--danger)!important;background:rgba(199,91,57,.08)!important}
-.quiz-feedback{font-size:12px;margin-top:6px;min-height:18px;font-family:var(--font-display)}
-
-/* -- COMPARE -- */
-.compare-box{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;
-}
-.compare-photo{
-  position:relative;padding-top:80%;border-radius:10px;overflow:hidden;
-  border:1px solid rgba(0,0,0,.08);
-}
-.compare-photo-inner{
-  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;padding:10px;
-}
-.compare-photo.old .compare-photo-inner{background:linear-gradient(135deg,#D4C5B2,#C4B5A2)}
-.compare-photo.now .compare-photo-inner{background:linear-gradient(135deg,#C8D8C8,#B8C8B8)}
-.compare-emoji{font-size:34px;opacity:.4}
-.compare-label{
-  font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:6px;font-family:var(--font-display);
-}
-.compare-photo.old .compare-label{background:rgba(139,69,19,.12);color:var(--route-kb)}
-.compare-photo.now .compare-label{background:rgba(90,143,90,.12);color:var(--success)}
-.compare-photo-img{
-  position:absolute;inset:0;background-size:cover;background-position:center;
-  transition:filter 2s ease;
-}
-.compare-photo-img.blur{filter:blur(8px) sepia(.5)}
-.compare-photo-img.clearing{filter:blur(3px) sepia(.3)}
-.compare-photo-img.clear{filter:blur(0) sepia(0)}
-.compare-slider-wrap{
-  display:flex;align-items:center;gap:8px;margin-bottom:8px;
-}
-.compare-slider-wrap span{font-size:11px;color:var(--ink-light);font-family:var(--font-display);flex-shrink:0}
-.compare-slider{
-  -webkit-appearance:none;flex:1;height:5px;border-radius:3px;
-  background:linear-gradient(90deg,#D4C5B2,var(--route-gc));outline:none;
-}
-.compare-slider::-webkit-slider-thumb{
-  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
-  background:var(--ink);cursor:pointer;border:2px solid var(--paper);
-  box-shadow:0 1px 4px rgba(0,0,0,.2);
-}
-
-/* Restore Button */
-.btn-restore{
-  display:block;width:100%;margin-top:10px;padding:12px;border-radius:var(--radius);
-  font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:1px;
-  color:#fff;background:var(--route-color,var(--gold));
-  transition:all .3s;text-align:center;
-}
-.btn-restore:hover{opacity:.9;transform:translateY(-1px)}
-.btn-restore:active{transform:scale(.97)}
-.btn-restore.success{background:var(--success)!important;pointer-events:none}
-.btn-restore:disabled{opacity:.5;pointer-events:none}
-
-/* Route Story Reward */
-.route-story-reward{
-  margin-top:12px;padding:10px;border-radius:var(--radius);
-  background:rgba(200,150,60,.08);border:1px solid rgba(200,150,60,.2);
-  font-size:11px;color:var(--ink-light);line-height:1.6;font-family:var(--font-display);
-}
-.route-story-reward strong{color:var(--gold)}
-
-/* ============================================================
-   ARCHIVE MODAL
-   ============================================================ */
-#archiveModal{
-  position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
-}
-#archiveModal.show{opacity:1;visibility:visible}
-#archivePanel{
-  width:92%;max-width:600px;max-height:88vh;overflow-y:auto;
-  background:linear-gradient(180deg,#2C1810,#1a0a00);
-  border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.3);
-  color:var(--paper);padding:24px 20px;position:relative;
-}
-.archive-close{
-  position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;
-  background:rgba(255,255,255,.1);color:#ccc;display:flex;align-items:center;justify-content:center;
-  font-size:16px;transition:all .2s;cursor:pointer;
-}
-.archive-close:hover{background:rgba(255,255,255,.2);color:#fff}
-.archive-title{
-  font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:2px;
-  color:var(--gold);text-align:center;margin-bottom:4px;
-}
-.archive-subtitle{text-align:center;font-size:12px;color:#9A8A7A;margin-bottom:18px;font-family:var(--font-display)}
-.archive-progress-section{margin-bottom:18px}
-.archive-route-progress{
-  display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;
-}
-.archive-route-progress .rp-icon{font-size:16px;width:24px;text-align:center}
-.archive-route-progress .rp-name{width:60px;font-family:var(--font-display);flex-shrink:0}
-.archive-route-progress .rp-bar{
-  flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;
-}
-.archive-route-progress .rp-bar .rp-fill{height:100%;border-radius:3px;transition:width .5s}
-.archive-route-progress .rp-count{width:36px;text-align:right;font-weight:700;font-size:13px;color:var(--gold)}
-.archive-total{margin-top:8px;text-align:center;font-size:12px;color:#9A8A7A}
-.archive-total strong{color:var(--gold);font-size:18px}
-.archive-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px}
-.archive-card-item{
-  aspect-ratio:3/4;border-radius:8px;position:relative;cursor:pointer;
-  perspective:500px;transition:transform .3s;
-}
-.archive-card-item:hover{transform:scale(1.05)}
-.archive-card-inner{
-  width:100%;height:100%;position:relative;transform-style:preserve-3d;
-  transition:transform .6s cubic-bezier(.4,0,.2,1);
-}
-.archive-card-item.flipped .archive-card-inner{transform:rotateY(180deg)}
-.archive-card-front,.archive-card-back{
-  position:absolute;inset:0;border-radius:8px;backface-visibility:hidden;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.15);overflow:hidden;
-}
-.archive-card-front{background:rgba(255,255,255,.06)}
-.archive-card-back{background:rgba(200,150,60,.1);transform:rotateY(180deg)}
-.archive-card-emoji{font-size:28px;margin-bottom:2px}
-.archive-card-label{font-size:8px;text-align:center;color:#ccc;line-height:1.3;padding:0 4px}
-.archive-card-back-icon{font-size:20px}
-.archive-empty{text-align:center;color:#7A6A7A;font-size:13px;padding:20px;font-family:var(--font-display)}
-
-/* ============================================================
-   THEORY MODAL
-   ============================================================ */
-#theoryModal{
-  position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s;
-}
-#theoryModal.show{opacity:1;visibility:visible}
-#theoryPanel{
-  width:92%;max-width:540px;max-height:85vh;overflow-y:auto;
-  background:var(--paper);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.15);
-  padding:24px 20px;position:relative;
-}
-.theory-close{
-  position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;
-  background:rgba(0,0,0,.05);color:var(--ink-light);display:flex;align-items:center;justify-content:center;
-  font-size:16px;transition:all .2s;cursor:pointer;
-}
-.theory-close:hover{background:rgba(0,0,0,.12)}
-.theory-title{
-  font-family:var(--font-display);font-size:20px;font-weight:900;letter-spacing:2px;
-  color:var(--ink);text-align:center;margin-bottom:6px;
-}
-.theory-subtitle{text-align:center;font-size:12px;color:var(--ink-light);margin-bottom:16px;font-family:var(--font-display)}
-.theory-block{
-  margin-bottom:14px;padding:14px;border-radius:var(--radius);
-  background:rgba(0,0,0,.02);border-left:3px solid var(--gold);
-}
-.theory-block h4{font-family:var(--font-display);font-size:14px;color:var(--ink);margin-bottom:4px}
-.theory-block p{font-size:12px;color:var(--ink-light);line-height:1.7}
-.theory-goal{
-  margin-top:14px;padding:14px;border-radius:var(--radius);
-  background:rgba(200,150,60,.08);border:1px solid rgba(200,150,60,.2);
-  font-family:var(--font-display);font-size:13px;color:var(--ink);line-height:1.8;text-align:center;
-}
-
-/* ============================================================
-   RESTORE SUCCESS ANIMATION
-   ============================================================ */
-#restoreFlash{
-  position:fixed;inset:0;z-index:250;pointer-events:none;
-  opacity:0;transition:opacity .3s;
-  background:radial-gradient(circle at center,rgba(200,150,60,.2) 0%,transparent 70%);
-}
-#restoreFlash.active{animation:flash 1.2s ease}
-@keyframes flash{0%{opacity:1}100%{opacity:0}}
-#restoreSparkles{
-  position:fixed;inset:0;z-index:251;pointer-events:none;
-}
-.restore-sparkle{
-  position:absolute;font-size:18px;
-  animation:sparkle-fly 1.5s ease-out forwards;
-  opacity:0;
-}
-@keyframes sparkle-fly{
-  0%{opacity:1;transform:translate(0,0) scale(0)}
-  50%{opacity:1;transform:translate(var(--sx),var(--sy)) scale(1.2)}
-  100%{opacity:0;transform:translate(var(--ex),var(--ey)) scale(0)}
-}
-
-/* ============================================================
-   TOAST
-   ============================================================ */
-#toast{
-  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);z-index:500;
-  padding:16px 24px;border-radius:16px;background:rgba(44,24,16,.94);
-  text-align:center;color:#fff;pointer-events:none;opacity:0;
-  transition:all .4s cubic-bezier(.34,1.56,.64,1);
-  font-family:var(--font-display);font-size:14px;font-weight:700;
-  box-shadow:0 8px 32px rgba(0,0,0,.25);
-}
-#toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-#toast .toast-emoji{font-size:30px;display:block}
-#toast .toast-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:4px;font-weight:400}
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media(min-width:768px){
-  #detailOverlay{align-items:center;justify-content:flex-end;padding:12px}
-  #detailCard{border-radius:20px;max-width:420px;max-height:92vh;margin-right:8px;transform:translateX(30px)}
-  #detailOverlay.show #detailCard{transform:translateX(0)}
-  .role-grid{grid-template-columns:repeat(4,1fr);max-width:720px}
-}
-@media(max-width:380px){
-  .tab-btn{padding:5px 8px;font-size:10px}
-  .role-grid{gap:8px;width:95%}
-  .role-card{padding:12px 8px}
-  .card-header{padding:14px 14px 0}
-  .card-body{padding:10px 14px 14px}
+  padding:6px;transition:all .3s;background:var(--card-bg);
+}
+.archive-card.unlocked{border-color:var(--green);background:rgba(91,140,90,0.08)}
+.archive-card.locked{border-color:var(--border-dim);background:#F5EDE0;opacity:.7}
+.archive-card .arc-id{font-size:10px;color:var(--text-muted);margin-bottom:2px}
+.archive-card .arc-name{font-size:11px;color:var(--text-main);font-weight:600;text-align:center}
+.archive-card .arc-icon{font-size:28px;margin-bottom:4px}
+/* shake */
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+/* theory section */
+.theory-section{
+  margin:0 16px 16px;padding:14px;border-top:1px solid var(--border-dim);
+}
+.theory-title{font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:10px}
+.theory-card{
+  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:8px;
+  padding:12px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04);
+}
+.theory-card .th-title{font-size:13px;font-weight:600;color:var(--text-main);margin-bottom:4px}
+.theory-card .th-content{font-size:12px;color:var(--text-muted);line-height:1.6}
+.theory-goal{font-size:11px;color:var(--text-faint);margin-top:12px;line-height:1.5}
+/* footer */
+.footer{text-align:center;padding:16px;color:var(--text-faint);font-size:11px;border-top:1px solid var(--border-dim)}
+/* leaflet overrides */
+.leaflet-popup-content-wrapper{background:var(--card-bg);color:var(--text-body);border-radius:8px;border:1px solid var(--border-dim);box-shadow:0 2px 12px rgba(0,0,0,.1)}
+.leaflet-popup-tip{background:var(--card-bg)}
+.leaflet-popup-content{margin:10px 12px;font-size:12px}
+.popup-name{font-weight:600;color:var(--text-main);font-size:13px}
+.popup-id{font-size:10px;color:var(--text-muted)}
+.popup-task{font-size:11px;color:var(--orange);margin-top:4px}
+/* responsive */
+@media (max-width:600px){
+  .header-top h1{font-size:20px;letter-spacing:3px}
+  .header-role{font-size:11px;padding:4px 10px}
+  #map{height:260px}
+  .archive-grid{grid-template-columns:repeat(2,1fr)}
+  .route-tab{padding:6px 10px;min-width:100px}
+  .route-tab .tab-name{font-size:11px}
+  .puzzle-grid{width:180px;height:180px}
 }
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     OPENING SCREEN
-     ============================================================ -->
-<div id="openingScreen">
-  <div class="opening-particles" id="openingParticles"></div>
-  <div class="opening-logo">
-    <div class="main-title">江城往事</div>
-    <div class="sub-title">武汉 · 时间修复师</div>
-    <div class="tagline">你收到了来自过去的碎片信号…</div>
+<!-- ========== HEADER ========== -->
+<div class="header">
+  <div class="header-top">
+    <h1>江城往事</h1>
+    <span class="header-role">🔧 武汉时间修复师</span>
   </div>
-  <div class="opening-prompt">▼ 选择你的身份 ▼</div>
-  <div class="role-grid">
-    <button class="role-card kb" onclick="startGame('kb')">
-      <span class="role-emoji">🔍</span>
-      <span class="role-name">租界侦探</span>
-      <span class="role-route-name">· 开埠风云 ·</span>
-      <span class="role-desc">调查汉口租界的秘密</span>
-    </button>
-    <button class="role-card sy" onclick="startGame('sy')">
-      <span class="role-emoji">✉️</span>
-      <span class="role-name">革命通讯员</span>
-      <span class="role-route-name">· 首义之路 ·</span>
-      <span class="role-desc">传递辛亥起义的情报</span>
-    </button>
-    <button class="role-card hy" onclick="startGame('hy')">
-      <span class="role-emoji">⛏️</span>
-      <span class="role-name">工业考古学家</span>
-      <span class="role-route-name">· 汉阳寻根 ·</span>
-      <span class="role-desc">挖掘汉阳工业遗产</span>
-    </button>
-    <button class="role-card gc" onclick="startGame('gc')">
-      <span class="role-emoji">🖌️</span>
-      <span class="role-name">古城修复师</span>
-      <span class="role-route-name">· 古城新韵 ·</span>
-      <span class="role-desc">修复武昌古城记忆</span>
-    </button>
+  <div class="header-progress">
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+    <span class="progress-text">已修复 <span class="done" id="progressDone">0</span>/25</span>
   </div>
 </div>
 
-<!-- ============================================================
-     MAIN SCREEN
-     ============================================================ -->
-<div id="mainScreen">
-  <div id="header">
-    <div class="header-identity" id="headerIdentity"></div>
-    <span class="header-title">江城往事</span>
-    <div class="header-progress">
-      <span>修复</span><strong id="totalCount">0</strong><span>/40</span>
-      <div class="header-progress-bar"><div class="fill" id="totalBar" style="width:0%"></div></div>
-    </div>
-  </div>
+<!-- ========== ROUTE SELECTOR ========== -->
+<div class="route-selector" id="routeSelector"></div>
 
-  <div id="routeTabs">
-    <button class="tab-btn route-sy" data-route="sy" onclick="switchRoute('sy')"><span class="tab-icon">✉️</span>首义之路<span class="tab-count">0/10</span></button>
-    <button class="tab-btn route-kb" data-route="kb" onclick="switchRoute('kb')"><span class="tab-icon">🔍</span>开埠风云<span class="tab-count">0/10</span></button>
-    <button class="tab-btn route-hy" data-route="hy" onclick="switchRoute('hy')"><span class="tab-icon">⛏️</span>汉阳寻根<span class="tab-count">0/10</span></button>
-    <button class="tab-btn route-gc" data-route="gc" onclick="switchRoute('gc')"><span class="tab-icon">🖌️</span>古城新韵<span class="tab-count">0/10</span></button>
-  </div>
-
-  <div id="mapContainer">
-    <div id="amap"></div>
-    <div id="fallbackMap" style="display:none;align-items:center;justify-content:center;flex-direction:column;width:100%;height:100%;background:var(--paper)">
-      <div style="font-size:60px;margin-bottom:10px">🗺️</div>
-      <div style="font-size:14px;color:var(--ink-light);font-family:var(--font-display)">武汉老城手绘地图</div>
-      <div style="font-size:11px;color:var(--ink-faint);margin-top:6px">需要网络连接加载高德地图</div>
-    </div>
-  </div>
-
-  <div id="bottomBar">
-    <div class="bottom-hint" id="bottomHint"></div>
-    <button class="btn-theory" onclick="openTheory()">📖 理论</button>
-    <button class="btn-archive" onclick="openArchive()">📁 历史档案 <span id="archiveBadge">0</span></button>
-  </div>
+<!-- ========== IDENTITY CARD ========== -->
+<div class="identity-card" id="identityCard">
+  <div class="id-title">当前身份</div>
+  <div class="id-name" id="idName">请选择路线</div>
+  <div class="id-desc" id="idDesc">点击上方路线卡片，选择你的历史身份，开启江城往事探索之旅。</div>
+  <span class="id-reward" id="idReward" style="background:rgba(184,134,11,0.1);color:var(--blue-text)">等待选择...</span>
 </div>
 
-<!-- ============================================================
-     DETAIL OVERLAY
-     ============================================================ -->
-<div id="detailOverlay" onclick="if(event.target===this)closeDetail()">
-  <div id="detailCard"></div>
+<!-- ========== MAP ========== -->
+<div class="map-section"><div id="map"></div></div>
+
+<!-- ========== POINTS LIST ========== -->
+<div class="points-section">
+  <div class="section-title">路线点位</div>
+  <div id="pointsList"></div>
 </div>
 
-<!-- ============================================================
-     ARCHIVE MODAL
-     ============================================================ -->
-<div id="archiveModal" onclick="if(event.target===this)closeArchive()">
-  <div id="archivePanel">
-    <button class="archive-close" onclick="closeArchive()">✕</button>
-    <div class="archive-title">📁 武汉历史档案</div>
-    <div class="archive-subtitle">已修复的历史碎片</div>
-    <div class="archive-progress-section" id="archiveProgressSection"></div>
-    <div class="archive-total" id="archiveTotal"></div>
-    <div class="archive-cards" id="archiveCards"></div>
-    <div class="archive-empty" id="archiveEmpty">尚未修复任何历史碎片<br>前往地图开始探索吧</div>
-  </div>
+<!-- ========== THEORY ========== -->
+<div class="theory-section">
+  <div class="theory-title">📖 理论框架</div>
+  <div class="theory-card"><div class="th-title">1. 可玩城市（Playable City）</div><div class="th-content">将城市空间转化为游戏化场域，让市民在探索中体验城市历史的层次感。</div></div>
+  <div class="theory-card"><div class="th-title">2. 地图叙事（Map Narrative）</div><div class="th-content">地图作为故事载体，每一条路线串联起一段历史叙事，25个点位构成武汉1800年的完整故事链。</div></div>
+  <div class="theory-card"><div class="th-title">3. 参与式营造（Participatory Placemaking）</div><div class="th-content">用户通过"修复"历史碎片的行为，参与城市记忆的共同生产，强化对地方的认同与归属感。</div></div>
+  <div class="theory-card"><div class="th-title">4. 多层交互（Multi-layer Interaction）</div><div class="th-content">历史/青年/美食/生态四层空间的游戏化建构，让城市成为一个可被"阅读"的立体文本。</div></div>
+  <div class="theory-goal">研究目标：通过游戏化设计，提升市民对武汉历史街区的探索欲与归属感，为城市更新提供创新路径。</div>
 </div>
 
-<!-- ============================================================
-     THEORY MODAL
-     ============================================================ -->
-<div id="theoryModal" onclick="if(event.target===this)closeTheory()">
-  <div id="theoryPanel">
-    <button class="theory-close" onclick="closeTheory()">✕</button>
-    <div class="theory-title">📖 理论框架</div>
-    <div class="theory-subtitle">可玩城市 · 地图叙事 · 参与式营造</div>
-    <div class="theory-block">
-      <h4>1. 可玩城市（Playable City）</h4>
-      <p>将城市空间转化为游戏化场域。本项目将武汉40处历史点位设计为可交互的游戏节点，让市民在探索中体验城市历史的层次感。</p>
-    </div>
-    <div class="theory-block">
-      <h4>2. 地图叙事（Map Narrative）</h4>
-      <p>地图不仅是空间定位工具，更是故事的载体。每一条路线串联起一段历史叙事，40个点位构成武汉1800年的完整故事链。</p>
-    </div>
-    <div class="theory-block">
-      <h4>3. 参与式营造（Participatory Placemaking）</h4>
-      <p>用户不仅是内容消费者，更是城市记忆的共同生产者。通过"修复"历史碎片的行为，强化对地方的认同与归属感。</p>
-    </div>
-    <div class="theory-block">
-      <h4>4. 多层交互（Multi-layer Interaction）</h4>
-      <p>历史层／青年层／美食层／生态层——四层空间的游戏化建构，让城市成为一个可被"阅读"的立体文本。</p>
-    </div>
-    <div class="theory-goal">
-      研究目标：通过游戏化设计，提升市民对武汉历史街区的探索欲与归属感，为城市更新提供创新路径。
-    </div>
-  </div>
-</div>
+<!-- ========== FOOTER ========== -->
+<div class="footer">可玩城市 · 地图叙事 · 参与式营造<br>武汉多层交互游戏化设计研究</div>
 
-<!-- ============================================================
-     EFFECTS
-     ============================================================ -->
-<div id="restoreFlash"></div>
-<div id="restoreSparkles"></div>
-<div id="toast"><span class="toast-emoji"></span><span class="toast-sub"></span></div>
+<!-- ========== ARCHIVE BUTTON ========== -->
+<button class="archive-btn" id="archiveBtn" onclick="openArchive()">📚<span class="badge" id="archiveBadge" style="display:none">0</span></button>
 
+<!-- ========== SCRIPTS ========== -->
 <script>
 'use strict';
 
-/* ================================================================
-   坐标说明：POINTS 中存储的是 WGS-84 坐标
-   高德地图使用 GCJ-02，通过 AMap.convertFrom 官方接口实时转换
-   确保标记位置与实际建筑精确吻合
-   ================================================================ */
-var gcjCache = {}; // 缓存转换结果
-function getGcjPos(point) {
-  if (gcjCache[point.id]) return gcjCache[point.id];
-  // 如果有缓存返回缓存，否则返回原始坐标（转换未完成时兜底）
-  return { lng: point.lng, lat: point.lat };
-}
-function batchConvertCoords(callback) {
-  if (typeof AMap === 'undefined' || !AMap.convertFrom) {
-    callback(); return;
+/* ============================================================
+   DATA: 4 ROUTES × 25 POINTS
+   ============================================================ */
+const ROUTES = [
+  {
+    id:"H1",name:"开埠风云",theme:"近代商都·汉口开埠",
+    identity:"租界侦探",
+    identity_desc:"你是1920年代的租界侦探，调查汉口租界的秘密。每修复一个点位，获得一条「线索」，集齐线索解锁「租界秘密档案」。",
+    reward:"称号「租界侦探」",
+    color:"#f0883e",emoji:"🔍",
+    points:[
+      {id:"H-01",name:"江汉关",year:"1924年",type:"建筑",play:"拼图修复",task:"钟楼密语",desc:"老照片碎成4块，拖动拼图还原江汉关钟楼全貌",reward:"线索「海关钟声」",lat:30.576075,lng:114.297308},
+      {id:"H-05",name:"巴公房子",year:"1910年",type:"建筑",play:"拼图修复",task:"俄式洋房",desc:"拼合巴公房子老照片，还原俄式古典建筑风貌",reward:"线索「俄国茶商」",lat:30.586141,lng:114.299831},
+      {id:"H-10",name:"平和打包厂",year:"1918年",type:"建筑",play:"拼图修复",task:"打包厂遗稿",desc:"拼合老汉口工业建筑照片，还原打包厂历史",reward:"线索「工业记忆」",lat:30.582585,lng:114.297772},
+      {id:"H-06",name:"黎黄陂路",year:"1900年",type:"生活",play:"对比修复",task:"街头博物馆",desc:"对比黎黄陂路今昔照片，滑动查看百年变迁",reward:"线索「使馆风云」",lat:30.586444,lng:114.302226},
+      {id:"H-07",name:"八七会议会址",year:"1927年",type:"事件",play:"排序修复",task:"紧急会议",desc:"将八七会议相关3张历史照片按时间顺序排列",reward:"线索「革命转折」",lat:30.586637,lng:114.299904},
+      {id:"H-08",name:"大智门火车站",year:"1903年",type:"建筑",play:"拼图修复",task:"最后一班列车",desc:"拼合大智门火车站老照片，还原京汉铁路起点",reward:"线索「铁路先锋」",lat:30.594098,lng:114.297131},
+      {id:"H-09",name:"咸安坊",year:"1915年",type:"生活",play:"对比修复",task:"里份暗号",desc:"对比咸安坊老照片与现状，感受里份文化变迁",reward:"线索「里份密匙」",lat:30.582745,lng:114.295924}
+    ]
+  },
+  {
+    id:"H2",name:"首义之路",theme:"辛亥首义·共和曙光",
+    identity:"革命通讯员",
+    identity_desc:"你是1911年的革命通讯员，传递起义情报。每修复一个点位，传递一段「情报」，情报需要按正确顺序排列（时间线）。",
+    reward:"勋章「首义先锋」",
+    color:"#da3633",emoji:"✉️",
+    points:[
+      {id:"H-11",name:"起义门",year:"1911年",type:"事件",play:"排序修复",task:"起义门号角",desc:"将武昌起义3个关键时刻按时间排序",reward:"情报「第一枪」",lat:30.525627,lng:114.307285},
+      {id:"H-12",name:"红楼",year:"1911年",type:"事件",play:"排序修复",task:"都督府密令",desc:"排列辛亥革命从起义到建都督府的时间线",reward:"情报「共和曙光」",lat:30.539175,lng:114.305584},
+      {id:"H-15",name:"中共五大会址",year:"1927年",type:"事件",play:"排序修复",task:"五大密档",desc:"排列中共早期革命历史事件时间线",reward:"情报「红色记忆」",lat:30.550933,lng:114.298459},
+      {id:"H-16",name:"农讲所",year:"1927年",type:"人物",play:"语音解谜",task:"农讲所课堂",desc:"聆听毛泽东在农讲所的故事，回答历史问题",reward:"情报「农民运动」",lat:30.55369,lng:114.300394},
+      {id:"H-19",name:"黄鹤楼",year:"223年",type:"建筑",play:"拼图修复",task:"登楼远眺",desc:"拼合历代黄鹤楼画作，感受「天下江山第一楼」",reward:"情报「江山胜迹」",lat:30.544649,lng:114.302467},
+      {id:"H-38",name:"得胜桥",year:"明清",type:"生活",play:"对比修复",task:"得胜暗号",desc:"对比得胜桥老街今昔，寻找隐藏的革命标语",reward:"情报「地下通道」",lat:30.549234,lng:114.30345}
+    ]
+  },
+  {
+    id:"H3",name:"汉阳寻根",theme:"知音故里·汉阳记忆",
+    identity:"工业考古学家",
+    identity_desc:"你是工业考古学家，挖掘汉阳工业遗产。解锁点位收集「工业遗物」，遗物可以组合成「汉阳工业图谱」。",
+    reward:"徽章「工业考古学家」",
+    color:"#3fb950",emoji:"⚒️",
+    points:[
+      {id:"H-21",name:"晴川阁",year:"1547年",type:"建筑",play:"拼图修复",task:"晴川对诗",desc:"拼合晴川阁古画，还原「晴川历历汉阳树」意境",reward:"遗物「禹王碑刻」",lat:30.555551,lng:114.284786},
+      {id:"H-22",name:"古琴台",year:"北宋",type:"人物",play:"语音解谜",task:"高山流水",desc:"聆听伯牙子期知音故事，回答知音文化问题",reward:"遗物「知音琴谱」",lat:30.554339,lng:114.26379},
+      {id:"H-23",name:"归元寺",year:"1658年",type:"建筑",play:"拼图修复",task:"罗汉秘境",desc:"拼合归元寺罗汉堂老照片，还原佛教艺术",reward:"遗物「罗汉图谱」",lat:30.545268,lng:114.259018},
+      {id:"H-24",name:"汉阳造",year:"1890年",type:"建筑",play:"拼图修复",task:"兵工厂探秘",desc:"拼合汉阳兵工厂老照片，还原「东方克虏伯」",reward:"遗物「步枪图纸」",lat:30.556515,lng:114.268372},
+      {id:"H-26",name:"龟山电视塔",year:"1986年",type:"建筑",play:"对比修复",task:"龟山守望",desc:"对比龟山电视塔建设前后，见证城市天际线变迁",reward:"遗物「塔顶瞭望」",lat:30.555545,lng:114.280582},
+      {id:"H-28",name:"汉阳树",year:"明代",type:"生活",play:"对比修复",task:"古树寻踪",desc:"对比汉阳树500年变迁，感受时光流逝",reward:"遗物「年轮记忆」",lat:30.547917,lng:114.27084}
+    ]
+  },
+  {
+    id:"H4",name:"古城新韵",theme:"一桥飞架·三镇连心",
+    identity:"古城修复师",
+    identity_desc:"你是古城修复师，修复武昌古城的文化记忆。解锁点位收集「文化碎片」，碎片拼成「武昌古城文化地图」。",
+    reward:"称号「古城守护者」",
+    color:"#a371f7",emoji:"🖌️",
+    points:[
+      {id:"H-29",name:"长江大桥",year:"1957年",type:"建筑",play:"拼图修复",task:"一桥飞架",desc:"拼合武汉长江大桥建设老照片，还原「万里长江第一桥」",reward:"碎片「钢铁长虹」",lat:30.547225,lng:114.292874},
+      {id:"H-30",name:"杨泗港大桥",year:"2019年",type:"建筑",play:"对比修复",task:"金色桥梁",desc:"对比杨泗港大桥与长江大桥，感受70年桥梁技术飞跃",reward:"碎片「现代奇迹」",lat:30.510951,lng:114.257402},
+      {id:"H-31",name:"昙华林",year:"明清",type:"生活",play:"对比修复",task:"文艺漫步",desc:"对比昙华林老街改造前后，感受古城新生",reward:"碎片「文艺新生」",lat:30.55194,lng:114.308791},
+      {id:"H-33",name:"翟雅阁",year:"1921年",type:"建筑",play:"拼图修复",task:"建筑探秘",desc:"拼合翟雅阁老照片，还原中西合璧建筑风格",reward:"碎片「中西合璧」",lat:30.550546,lng:114.314708},
+      {id:"H-37",name:"粮道街",year:"明清",type:"生活",play:"对比修复",task:"过早文化",desc:"对比粮道街早餐文化今昔，感受武汉烟火气",reward:"碎片「烟火记忆」",lat:30.547408,lng:114.310451},
+      {id:"H-39",name:"宝通寺",year:"南朝",type:"建筑",play:"拼图修复",task:"洪山古刹",desc:"拼合宝通寺与洪山宝塔老照片，还原千年古刹",reward:"碎片「佛塔禅音」",lat:30.530349,lng:114.341206},
+      {id:"H-40",name:"武汉大学",year:"1893年",type:"建筑",play:"对比修复",task:"珞珈寻樱",desc:"对比武大校园历史照片与现状，感受学府变迁",reward:"碎片「学府春秋」",lat:30.536243,lng:114.364514}
+    ]
   }
-  var wgsList = POINTS.map(function(p) { return [p.lng, p.lat]; });
-  AMap.convertFrom(wgsList, 'gps', function(status, result) {
-    if (status === 'complete' && result.info === 'ok' && result.locations) {
-      for (var i = 0; i < result.locations.length; i++) {
-        gcjCache[POINTS[i].id] = {
-          lng: result.locations[i].lng,
-          lat: result.locations[i].lat
-        };
-      }
-    }
-    callback();
-  });
-}
-
-/* ================================================================
-   DATA — 40 points, 4 routes, 4 gameplay types
-   ================================================================ */
-const ROUTES = {
-  kb:{id:'kb',name:'开埠风云',icon:'🔍',color:'#8B4513',role:'租界侦探',roleIcon:'🔍',roleEmoji:'🔍',
-    story:'租界侦探',narrative:'你是1920年代的租界侦探，调查汉口租界的秘密。',
-    clue:'线索',clueIcon:'🔎',rewardTitle:'租界秘密档案',rewardBadge:'租界侦探'},
-  sy:{id:'sy',name:'首义之路',icon:'✉️',color:'#C75B39',role:'革命通讯员',roleIcon:'✉️',roleEmoji:'✉️',
-    story:'革命通讯员',narrative:'你是1911年的革命通讯员，传递起义情报。',
-    clue:'情报',clueIcon:'📜',rewardTitle:'首义先锋勋章',rewardBadge:'首义先锋'},
-  hy:{id:'hy',name:'汉阳寻根',icon:'⛏️',color:'#708090',role:'工业考古学家',roleIcon:'⛏️',roleEmoji:'⛏️',
-    story:'工业考古学家',narrative:'你是工业考古学家，挖掘汉阳工业遗产。',
-    clue:'遗物',clueIcon:'⚙️',rewardTitle:'汉阳工业图谱',rewardBadge:'工业考古学家'},
-  gc:{id:'gc',name:'古城新韵',icon:'🖌️',color:'#5F9EA0',role:'古城修复师',roleIcon:'🖌️',roleEmoji:'🖌️',
-    story:'古城修复师',narrative:'你是古城修复师，修复武昌古城的文化记忆。',
-    clue:'碎片',clueIcon:'🧩',rewardTitle:'武昌古城文化地图',rewardBadge:'古城守护者'}
-};
-
-const GAMEPLAY = {
-  puzzle:{icon:'🧩',label:'拼图修复',desc:'拖动碎片还原历史照片',color:'#8B4513'},
-  sort:{icon:'⏳',label:'时间排序',desc:'按时间顺序排列历史照片',color:'#C75B39'},
-  voice:{icon:'🎙️',label:'语音解谜',desc:'聆听故事后回答问题',color:'#5F9EA0'},
-  compare:{icon:'📸',label:'今昔对比',desc:'拍摄对比照穿越时空',color:'#708090'}
-};
-
-const pointTypes = {
-  'H-01':'puzzle','H-02':'puzzle','H-03':'puzzle','H-04':'puzzle','H-05':'puzzle',
-  'H-06':'compare','H-07':'sort','H-08':'puzzle','H-09':'compare','H-10':'puzzle',
-  'H-11':'sort','H-12':'sort','H-13':'voice','H-14':'compare','H-15':'sort',
-  'H-16':'voice','H-17':'voice','H-18':'voice','H-19':'compare','H-20':'sort',
-  'H-21':'compare','H-22':'compare','H-23':'compare','H-24':'sort','H-25':'sort',
-  'H-26':'puzzle','H-27':'compare','H-28':'compare','H-29':'puzzle','H-30':'puzzle',
-  'H-31':'sort','H-32':'puzzle','H-33':'puzzle','H-34':'puzzle','H-35':'puzzle',
-  'H-36':'voice','H-37':'compare','H-38':'compare','H-39':'compare','H-40':'puzzle'
-};
-
-/* Voice quiz data: [narration, question, [options], correctIndex] */
-const voiceData = {
-  'H-13':['1931年，孙中山先生铜像在武昌阅马场揭幕。他是辛亥革命的精神领袖，提出"天下为公"的理想。铜像凝视着这片他深爱的土地，见证了中国从帝制走向共和的伟大变革。','孙中山铜像位于哪个广场？',['阅马场','洪山广场','光谷广场'],0],
-  'H-16':['1927年，毛泽东在武昌创办农民运动讲习所。来自全国17个省的800余名学员在此学习革命理论。这里是培养农民运动骨干的摇篮，为中国革命播下了火种。','农讲所办了多长时间的培训班？',['约4个月','一整年','2年'],0],
-  'H-17':['1927年春，毛泽东在武昌都府堤41号居住。在这里，他写下了《湖南农民运动考察报告》，深入思考了中国革命的道路问题。这座普通的民居，见证了一位伟人的思想转折。','毛泽东旧居在武昌哪条街？',['都府堤','户部巷','昙华林'],0],
-  'H-18':['1927年，武昌中央军事政治学校成立，这是国共合作时期培养军事干部的重要学府。学员们在这里学习军事理论，进行严格的军事训练，为中国革命事业培养了大批军事人才。','这所军校设在武昌何处？',['原两湖书院旧址','武汉大学','起义门附近'],0],
-  'H-36':['石瑛，辛亥革命元老，曾任湖北省长。他一生清廉，为官正直，在武汉留下了许多感人事迹。他的故居位于武昌昙华林，是一座中西合璧的民国建筑，静静诉说着这位先贤的人生故事。','石瑛曾任什么职务？',['湖北省长','武汉市市长','教育部长'],0]
-};
-
-/* Time sort data: [{year, label, desc}], ordered from oldest to newest */
-const sortData = {
-  'H-07':[
-    {year:'1927年春',label:'武汉国民政府时期',desc:'国民政府在武汉办公'},
-    {year:'1927年8月7日',label:'八七会议召开',desc:'中共中央紧急会议，毛泽东提出"枪杆子里出政权"'},
-    {year:'1927年秋',label:'秋收起义',desc:'八七会议决策的后续行动'}
-  ],
-  'H-11':[
-    {year:'明代',label:'中和门建成',desc:'武昌古城九门之一'},
-    {year:'1911年10月10日',label:'起义门枪声',desc:'辛亥革命第一枪在此打响'},
-    {year:'2011年',label:'百年纪念',desc:'起义门修缮一新，成为红色地标'}
-  ],
-  'H-12':[
-    {year:'1911年10月10日',label:'武昌起义爆发',desc:'革命军攻占总督府'},
-    {year:'1911年10月11日',label:'鄂军都督府成立',desc:'中华民国军政府鄂军都督府在此设立'},
-    {year:'1981年',label:'纪念馆成立',desc:'辛亥革命武昌起义纪念馆正式开放'}
-  ],
-  'H-15':[
-    {year:'1927年4月',label:'中共五大召开',desc:'在武汉秘密召开'},
-    {year:'1927年5月',label:'五大决议',desc:'确定紧急时期的方针'},
-    {year:'2007年',label:'旧址修复',desc:'五大会址纪念馆重新开放'}
-  ],
-  'H-20':[
-    {year:'明代洪武年间',label:'武昌建城',desc:'武昌城九门格局形成'},
-    {year:'1927年',label:'武胜门拆除',desc:'北伐后武昌城墙被拆'},
-    {year:'2020年',label:'遗址发现',desc:'考古发掘重现武胜门基址'}
-  ],
-  'H-24':[
-    {year:'1890年',label:'汉阳铁厂创办',desc:'张之洞创办汉阳铁厂'},
-    {year:'1895年',label:'汉阳兵工厂',desc:'著名"汉阳造"步枪产于此'},
-    {year:'2010年',label:'艺术区转型',desc:'工业遗产改造为汉阳造艺术区'}
-  ],
-  'H-25':[
-    {year:'三国时期',label:'铁门关始建',desc:'汉阳军事要塞'},
-    {year:'明代',label:'重建铁门关',desc:'汉阳城防重要门户'},
-    {year:'1990年',label:'仿古重建',desc:'按明清样式重建铁门关'}
-  ],
-  'H-31':[
-    {year:'明清时期',label:'昙华林聚落',desc:'武昌城外文人雅集之地'},
-    {year:'1861年',label:'开埠影响',desc:'西式建筑开始出现'},
-    {year:'2005年',label:'历史街区保护',desc:'昙华林成为武汉文化名片'}
-  ]
-};
-
-const POINTS = [
-  /*===== 开埠风云（10）=====*/
-  {id:'H-01',route:'kb',name:'江汉关博物馆',lat:30.5755,lng:114.2915,year:'1924',photoUrl:'',oldDesc:'钟楼初建时原貌',story:'汉口开埠的标志性建筑，钟声见证了百年风云'},
-  {id:'H-02',route:'kb',name:'美最时洋行',lat:30.5930,lng:114.2925,year:'1909',photoUrl:'',oldDesc:'德租界时期洋行',story:'德商在汉口的重要贸易据点'},
-  {id:'H-03',route:'kb',name:'德国领事馆旧址',lat:30.5945,lng:114.2935,year:'1888',photoUrl:'',oldDesc:'维多利亚式建筑',story:'汉口最早的领事馆之一'},
-  {id:'H-04',route:'kb',name:'东方汇理银行',lat:30.5965,lng:114.2945,year:'1902',photoUrl:'',oldDesc:'法租界金融中心',story:'法租界的金融心脏'},
-  {id:'H-05',route:'kb',name:'巴公房子',lat:30.5875,lng:114.2905,year:'1910',photoUrl:'',oldDesc:'俄商巴公公寓',story:'俄国茶商在汉口的豪华公寓'},
-  {id:'H-06',route:'kb',name:'黎黄陂路',lat:30.5885,lng:114.2895,year:'俄租界',photoUrl:'',oldDesc:'1920年代街景',story:'俄租界时期的优雅街道'},
-  {id:'H-07',route:'kb',name:'八七会议会址',lat:30.5865,lng:114.2910,year:'1927',photoUrl:'',oldDesc:'历史转折场景',story:'中国共产党历史上的伟大转折'},
-  {id:'H-08',route:'kb',name:'大智门火车站',lat:30.5910,lng:114.2950,year:'1903',photoUrl:'',oldDesc:'亚洲最壮观车站',story:'京汉铁路的起点，法式建筑瑰宝'},
-  {id:'H-09',route:'kb',name:'咸安坊',lat:30.5860,lng:114.2920,year:'1930',photoUrl:'',oldDesc:'石库门生活场景',story:'汉口里份文化的活化石'},
-  {id:'H-10',route:'kb',name:'平和打包厂',lat:30.5840,lng:114.2910,year:'1918',photoUrl:'',oldDesc:'英商打包厂',story:'工业遗产保护的成功典范'},
-  /*===== 首义之路（10）=====*/
-  {id:'H-11',route:'sy',name:'起义门',lat:30.5450,lng:114.2970,year:'1911',photoUrl:'',oldDesc:'武昌古城城门',story:'辛亥革命第一枪在此打响'},
-  {id:'H-12',route:'sy',name:'辛亥革命纪念馆',lat:30.5425,lng:114.2965,year:'1911',photoUrl:'',oldDesc:'鄂军都督府',story:'亚洲第一个民主共和政权的诞生地'},
-  {id:'H-13',route:'sy',name:'孙中山铜像',lat:30.5430,lng:114.2960,year:'1931',photoUrl:'',oldDesc:'铜像揭幕典礼',story:'天下为公的精神丰碑'},
-  {id:'H-14',route:'sy',name:'紫阳湖公园',lat:30.5395,lng:114.2945,year:'辛亥时期',photoUrl:'',oldDesc:'军械所遗址',story:'曾经是辛亥革命的秘密军械所'},
-  {id:'H-15',route:'sy',name:'中共五大会址',lat:30.5400,lng:114.2950,year:'1927',photoUrl:'',oldDesc:'五大会议场景',story:'唯一一次在武汉召开的党代会'},
-  {id:'H-16',route:'sy',name:'农民运动讲习所',lat:30.5405,lng:114.2955,year:'1927',photoUrl:'',oldDesc:'农讲所学员合影',story:'中国革命火种的传播地'},
-  {id:'H-17',route:'sy',name:'毛泽东旧居',lat:30.5402,lng:114.2952,year:'1927',photoUrl:'',oldDesc:'都府堤41号',story:'伟人在武汉的岁月'},
-  {id:'H-18',route:'sy',name:'武昌中央军校',lat:30.5415,lng:114.2970,year:'1927',photoUrl:'',oldDesc:'军事学校',story:'国共合作培养军事人才'},
-  {id:'H-19',route:'sy',name:'黄鹤楼',lat:30.5433,lng:114.3062,year:'历代',photoUrl:'',oldDesc:'历代黄鹤楼',story:'天下江山第一楼，武汉的文化符号'},
-  {id:'H-20',route:'sy',name:'武胜门遗址',lat:30.5452,lng:114.2980,year:'明清',photoUrl:'',oldDesc:'武胜门原貌',story:'武昌古城九门之一'},
-  /*===== 汉阳寻根（10）=====*/
-  {id:'H-21',route:'hy',name:'晴川阁',lat:30.5630,lng:114.2805,year:'明代',photoUrl:'',oldDesc:'大禹治水',story:'楚国晴川第一楼'},
-  {id:'H-22',route:'hy',name:'古琴台',lat:30.5580,lng:114.2715,year:'春秋',photoUrl:'',oldDesc:'伯牙子期',story:'高山流水遇知音'},
-  {id:'H-23',route:'hy',name:'归元寺',lat:30.5530,lng:114.2670,year:'清代',photoUrl:'',oldDesc:'罗汉堂',story:'湖北四大佛教禅院之一'},
-  {id:'H-24',route:'hy',name:'汉阳造艺术区',lat:30.5595,lng:114.2780,year:'洋务',photoUrl:'',oldDesc:'汉阳兵工厂',story:'中国近代工业的发源地'},
-  {id:'H-25',route:'hy',name:'铁门关',lat:30.5645,lng:114.2795,year:'三国',photoUrl:'',oldDesc:'军事要塞',story:'汉阳千年军事要塞'},
-  {id:'H-26',route:'hy',name:'龟山电视塔',lat:30.5615,lng:114.2745,year:'1986',photoUrl:'',oldDesc:'龟山旧貌',story:'武汉城市天际线的标志'},
-  {id:'H-27',route:'hy',name:'南岸嘴',lat:30.5675,lng:114.2845,year:'天然',photoUrl:'',oldDesc:'两江交汇',story:'长江与汉江的交汇点'},
-  {id:'H-28',route:'hy',name:'汉阳树',lat:30.5545,lng:114.2695,year:'唐代',photoUrl:'',oldDesc:'千年银杏',story:'唐代至今的千年银杏'},
-  {id:'H-29',route:'hy',name:'武汉长江大桥',lat:30.5575,lng:114.2895,year:'1957',photoUrl:'',oldDesc:'通车典礼',story:'万里长江第一桥'},
-  {id:'H-30',route:'hy',name:'杨泗港大桥',lat:30.5295,lng:114.2495,year:'2019',photoUrl:'',oldDesc:'建设过程',story:'长江上最宽的悬索桥'},
-  /*===== 古城新韵（10）=====*/
-  {id:'H-31',route:'gc',name:'昙华林',lat:30.5478,lng:114.2960,year:'明清',photoUrl:'',oldDesc:'老昙华林',story:'武昌古城最文艺的历史街区'},
-  {id:'H-32',route:'gc',name:'文华大学礼拜堂',lat:30.5470,lng:114.2955,year:'1871',photoUrl:'',oldDesc:'文华书院',story:'华中最早的教会大学建筑'},
-  {id:'H-33',route:'gc',name:'翟雅阁',lat:30.5482,lng:114.2965,year:'1921',photoUrl:'',oldDesc:'健身所',story:'中国近代最早的体育馆之一'},
-  {id:'H-34',route:'gc',name:'仁济医院',lat:30.5488,lng:114.2970,year:'1883',photoUrl:'',oldDesc:'西医院',story:'汉口最早的西医院'},
-  {id:'H-35',route:'gc',name:'瑞典教区旧址',lat:30.5480,lng:114.2962,year:'1890',photoUrl:'',oldDesc:'传教士生活',story:'北欧建筑风格的历史遗存'},
-  {id:'H-36',route:'gc',name:'石瑛故居',lat:30.5475,lng:114.2958,year:'民国',photoUrl:'',oldDesc:'辛亥元老',story:'廉洁正直的辛亥元老之家'},
-  {id:'H-37',route:'gc',name:'粮道街',lat:30.5510,lng:114.2990,year:'明清',photoUrl:'',oldDesc:'民生百态',story:'武昌最接地气的老街'},
-  {id:'H-38',route:'gc',name:'得胜桥',lat:30.5438,lng:114.2975,year:'明代',photoUrl:'',oldDesc:'老街原貌',story:'与黄鹤楼同框的经典机位'},
-  {id:'H-39',route:'gc',name:'宝通寺',lat:30.5195,lng:114.3345,year:'南朝',photoUrl:'',oldDesc:'千年古寺',story:'武汉最古老的佛教寺院'},
-  {id:'H-40',route:'gc',name:'武汉大学',lat:30.5345,lng:114.3645,year:'1930s',photoUrl:'',oldDesc:'国立武汉大学',story:'中国最美大学'}
 ];
 
-/* ================================================================
-   GAME STATE
-   ================================================================ */
-let playerRole = 'sy';           // initial: 首义之路
-let currentRoute = 'sy';
-let unlocked = {};
-let routeClues = {kb:[],sy:[],hy:[],gc:[]}; // clues collected per route
-let map = null;
-let markers = {};
-let polylines = {};
-let mapLoaded = false;
-let detailPointId = null;
+/* ============================================================
+   STATE
+   ============================================================ */
+let activeRouteIdx = 0;
+let repairedPoints = JSON.parse(localStorage.getItem('repairedPoints')||'[]');
+let map, currentMarkers=[], currentPolyline=null;
 
-try{var s=localStorage.getItem('wh2_unlocked');if(s)unlocked=JSON.parse(s)}catch(e){}
-try{var s2=localStorage.getItem('wh2_clues');if(s2)routeClues=JSON.parse(s2)}catch(e){}
-try{var s3=localStorage.getItem('wh2_role');if(s3)playerRole=s3}catch(e){}
+function saveRepair(){ localStorage.setItem('repairedPoints',JSON.stringify(repairedPoints)); }
+function isRepaired(id){ return repairedPoints.indexOf(id)!==-1; }
+function getRepairedCount(){ return repairedPoints.length; }
 
-function saveState(){try{localStorage.setItem('wh2_unlocked',JSON.stringify(unlocked));localStorage.setItem('wh2_clues',JSON.stringify(routeClues));localStorage.setItem('wh2_role',playerRole)}catch(e){}}
-function isUnlocked(id){return!!unlocked[id]}
-function setUnlocked(id){unlocked[id]=true;var p=findPoint(id);if(p)routeClues[p.route].push(id);saveState()}
-function countRoute(r){return POINTS.filter(function(p){return p.route===r&&isUnlocked(p.id)}).length}
-function totalUnlocked(){return POINTS.filter(function(p){return isUnlocked(p.id)}).length}
-function findPoint(id){return POINTS.find(function(p){return p.id===id})}
-
-/* ================================================================
-   START GAME — opening transition
-   ================================================================ */
-function startGame(routeId){
-  playerRole = routeId;
-  currentRoute = routeId;
-  document.getElementById('openingScreen').classList.add('hidden');
-  document.getElementById('mainScreen').classList.add('visible');
-  updateHeaderIdentity();
-  updateAllUI();
-  if(typeof AMap!=='undefined')initMap();
-  setTimeout(function(){if(!mapLoaded)showFallback()},5000);
-  switchRoute(routeId);
-}
-
-/* ================================================================
-   OPENING PARTICLES
-   ================================================================ */
-(function initParticles(){
-  var container = document.getElementById('openingParticles');
-  if(!container)return;
-  for(var i=0;i<40;i++){
-    var p=document.createElement('div');
-    p.className='opening-particle';
-    p.style.left=Math.random()*100+'%';
-    p.style.animationDelay=Math.random()*4+'s';
-    p.style.animationDuration=(3+Math.random()*4)+'s';
-    container.appendChild(p);
-  }
-})();
-
-/* ================================================================
-   HEADER IDENTITY
-   ================================================================ */
-function updateHeaderIdentity(){
-  var cfg=ROUTES[playerRole];
-  var el=document.getElementById('headerIdentity');
-  el.textContent=cfg.roleEmoji+' '+cfg.role;
-  el.style.color=cfg.color;
-  el.style.borderColor=cfg.color;
-}
-
-/* ================================================================
+/* ============================================================
    MAP
-   ================================================================ */
+   ============================================================ */
 function initMap(){
-  if(typeof AMap==='undefined'){showFallback();return}
-  try{map=new AMap.Map('amap',{
-    center:[114.3055,30.5928],zoom:11,mapStyle:'amap://styles/normal',
-    viewMode:'2D',resizeEnable:true,touchZoom:true,dragEnable:true,
-    zoomEnable:true,doubleClickZoom:true,scrollWheel:true,showBuildingBlock:false
-  });
-  // 使用高德官方 WGS84→GCJ02 转换接口，确保坐标精确
-  batchConvertCoords(function(){
-    mapLoaded=true;
-    document.getElementById('fallbackMap').style.display='none';
-    document.getElementById('amap').style.display='';
-    createAllMarkers();createPolylines();refreshRoute();
-    // 将地图中心也转换到 GCJ-02
-    if (gcjCache['__center__']) {
-      map.setCenter([gcjCache['__center__'].lng, gcjCache['__center__'].lat]);
-    }
-  });
-  // 同时转换中心点坐标
-  if (AMap.convertFrom) {
-    AMap.convertFrom([[114.3055,30.5928]], 'gps', function(status, result) {
-      if (status === 'complete' && result.locations && result.locations.length > 0) {
-        gcjCache['__center__'] = { lng: result.locations[0].lng, lat: result.locations[0].lat };
-        if (map && mapLoaded) {
-          map.setCenter([gcjCache['__center__'].lng, gcjCache['__center__'].lat]);
-        }
-      }
+  map = L.map('map',{center:[30.55,114.30],zoom:12,zoomControl:false});
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',{
+    subdomains:'1234',attribution:'&copy; 高德地图',maxZoom:19
+  }).addTo(map);
+}
+
+function updateMap(route){
+  currentMarkers.forEach(m=>map.removeLayer(m));currentMarkers=[];
+  if(currentPolyline)map.removeLayer(currentPolyline);
+  var latlngs=[];
+  route.points.forEach((pt,i)=>{
+    var latlng=[pt.lat,pt.lng];latlngs.push(latlng);
+    var repaired=isRepaired(pt.id);
+    var icon=L.divIcon({
+      className:'custom-marker-container',
+      html:'<div class="custom-marker'+(repaired?' repaired':'')+'" style="background:'+route.color+'">'+(repaired?'✓':route.emoji)+'</div>',
+      iconSize:[32,32],iconAnchor:[16,16]
     });
-  }
-  setTimeout(function(){if(!mapLoaded&&map){try{var c=map.getCenter();if(c){mapLoaded=true;document.getElementById('fallbackMap').style.display='none';document.getElementById('amap').style.display='';createAllMarkers();createPolylines();refreshRoute()}}catch(e){}}},3000);
-  }catch(e){showFallback()}
-}
-function showFallback(){
-  document.getElementById('amap').style.display='none';
-  document.getElementById('fallbackMap').style.display='flex';
-}
-
-/* ================================================================
-   MARKERS — role-dependent icons
-   ================================================================ */
-function getMarkerEmoji(routeId){
-  var cfg=ROUTES[routeId];
-  return cfg.roleEmoji||'📌';
-}
-function createMarkerHTML(point){
-  var cfg=ROUTES[point.route];
-  var unl=isUnlocked(point.id);
-  var emoji=getMarkerEmoji(point.route);
-  var bg=unl?cfg.color:'#9A8A7A';
-  var shadow=unl?'0 0 10px '+cfg.color+',0 0 20px '+cfg.color:'none';
-  var cls=unl?'history-pin unlocked':'history-pin locked';
-  var borderColor=unl?cfg.color:'#ccc';
-  return '<div class="'+cls+'" style="background:'+bg+';border:2px solid '+borderColor+';box-shadow:'+shadow+'">'+emoji+'</div>';
-}
-function createAllMarkers(){
-  if(!map)return;
-  Object.keys(markers).forEach(function(k){if(markers[k]){markers[k].setMap(null);markers[k]=null}});
-  markers={};
-  POINTS.forEach(function(point){
-    var gcj = getGcjPos(point);
-    var marker=new AMap.Marker({
-      position:[gcj.lng,gcj.lat],content:createMarkerHTML(point),
-      offset:new AMap.Pixel(-21,-21),zIndex:isUnlocked(point.id)?100:50,visible:true
-    });
-    marker._pointData=point;
-    marker.on('click',function(){openDetail(point.id)});
-    markers[point.id]=marker;map.add(marker);
+    var m=L.marker(latlng,{icon}).bindPopup(
+      '<div class="popup-name">'+pt.id+' '+pt.name+'</div>'+
+      '<div class="popup-id">'+pt.year+' · '+pt.type+' · '+pt.play+'</div>'+
+      '<div class="popup-task">'+pt.task+'</div>'+
+      (repaired?'<div style="color:#5B8C5A;font-size:11px;margin-top:4px">✅ 已修复</div>':'')
+    ).addTo(map);
+    currentMarkers.push(m);
   });
-}
-function refreshMarker(point){
-  var marker=markers[point.id];if(!marker)return;
-  marker.setContent(createMarkerHTML(point));
-  marker.setzIndex(isUnlocked(point.id)?100:50);
+  if(latlngs.length>1){currentPolyline=L.polyline(latlngs,{color:route.color,weight:3,opacity:.6,dashArray:'8,6'}).addTo(map);}
+  if(latlngs.length>0){map.fitBounds(L.latLngBounds(latlngs),{padding:[40,40]});}
 }
 
-/* ================================================================
-   POLYLINES
-   ================================================================ */
-function createPolylines(){
-  if(!map)return;
-  Object.keys(polylines).forEach(function(k){if(polylines[k])polylines[k].setMap(null)});
-  polylines={};
-  Object.keys(ROUTES).forEach(function(rid){
-    var cfg=ROUTES[rid];
-    var pts=POINTS.filter(function(p){return p.route===rid}).map(function(p){
-      var gcj=getGcjPos(p);return[gcj.lng,gcj.lat];
-    });
-    if(pts.length<2)return;
-    var polyline=new AMap.Polyline({
-      path:pts,strokeColor:cfg.color,strokeWeight:3,strokeOpacity:.55,
-      strokeStyle:'dashed',strokeDasharray:[12,8],lineJoin:'round',showDir:true,zIndex:10
-    });
-    polyline.setMap(map);polylines[rid]=polyline;
+/* ============================================================
+   ROUTE SELECTOR
+   ============================================================ */
+function renderRouteSelector(){
+  var c=document.getElementById('routeSelector');c.innerHTML='';
+  ROUTES.forEach((r,i)=>{
+    var tab=document.createElement('div');
+    tab.className='route-tab'+(i===activeRouteIdx?' active':'');
+    tab.setAttribute('data-route',i);
+    tab.innerHTML='<span class="tab-emoji">'+r.emoji+'</span><div class="tab-name">'+r.name+'</div><div class="tab-theme">'+r.theme+'</div>';
+    tab.onclick=function(){selectRoute(i);};
+    c.appendChild(tab);
   });
 }
 
-/* ================================================================
-   REFRESH ROUTE
-   ================================================================ */
-function refreshRoute(){
-  if(!map)return;
-  POINTS.forEach(function(point){
-    var m=markers[point.id];if(!m)return;
-    if(currentRoute==='all'||point.route===currentRoute){m.show();m.setOptions({opacity:1})}
-    else{m.show();m.setOptions({opacity:.15})}
-  });
-  Object.keys(polylines).forEach(function(rid){
-    var pl=polylines[rid];if(!pl)return;
-    if(currentRoute==='all'||currentRoute===rid){pl.show();pl.setOptions({strokeOpacity:.7})}
-    else{pl.show();pl.setOptions({strokeOpacity:.08})}
-  });
-  if(currentRoute!=='all'){
-    var overs=POINTS.filter(function(p){return p.route===currentRoute}).map(function(p){return markers[p.id]}).filter(Boolean);
-    if(overs.length)map.setFitView(overs,false,[60,60,60,60]);
-  }else{var gcjC=gcjCache['__center__']||{lng:114.3055,lat:30.5928};map.setZoomAndCenter(11,[gcjC.lng,gcjC.lat])}
+function selectRoute(idx){
+  activeRouteIdx=idx;var r=ROUTES[idx];
+  document.querySelectorAll('.route-tab').forEach(function(t,i){t.classList.toggle('active',i===idx);});
+  document.getElementById('idName').textContent=r.identity;
+  document.getElementById('idDesc').textContent=r.identity_desc;
+  var rw=document.getElementById('idReward');
+  rw.textContent='最终奖励：'+r.reward;
+  rw.style.background='rgba(184,134,11,0.1)';rw.style.color='var(--blue-text)';
+  document.getElementById('identityCard').style.borderColor=r.color+'44';
+  updateMap(r);renderPointsList(r);
 }
 
-/* ================================================================
-   ROUTE SWITCHING
-   ================================================================ */
-function switchRoute(routeId){
-  currentRoute=routeId;
-  document.querySelectorAll('.tab-btn').forEach(function(b){
-    b.classList.toggle('active',b.dataset.route===routeId);
-  });
-  refreshRoute();updateBottomBar();
+/* ============================================================
+   POINTS LIST
+   ============================================================ */
+function getTypeClass(t){
+  if(t==='建筑')return'type-building';if(t==='事件')return'type-event';
+  if(t==='人物')return'type-person';return'type-life';
+}
+function getPlayClass(p){
+  if(p==='拼图修复')return'play-puzzle';if(p==='排序修复')return'play-sort';
+  if(p==='语音解谜')return'play-voice';return'play-compare';
 }
 
-/* ================================================================
-   UI UPDATES
-   ================================================================ */
-function updateAllUI(){
-  var total=totalUnlocked();
-  document.getElementById('totalCount').textContent=total;
-  document.getElementById('totalBar').style.width=(total/40*100)+'%';
-  document.getElementById('archiveBadge').textContent=total;
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    var rid=btn.dataset.route;if(!rid||!ROUTES[rid])return;
-    var cnt=countRoute(rid);var el=btn.querySelector('.tab-count');
-    if(el)el.textContent=cnt+'/10';
-  });
-  updateBottomBar();
-}
-function updateBottomBar(){
-  var el=document.getElementById('bottomHint');
-  if(!el)return;
-  if(currentRoute==='all'){
-    el.innerHTML='🗺️ 全部路线 <strong>'+totalUnlocked()+'/40</strong> 已修复';
-  }else{
-    var cfg=ROUTES[currentRoute];if(!cfg)return;
-    el.innerHTML=cfg.icon+' <strong style="color:'+cfg.color+'">'+cfg.role+'</strong> · '+cfg.clue+' '+countRoute(currentRoute)+'/10';
-  }
-}
-
-/* ================================================================
-   DETAIL CARD
-   ================================================================ */
-function openDetail(pointId){
-  detailPointId=pointId;
-  var point=findPoint(pointId);if(!point)return;
-  var cfg=ROUTES[point.route];
-  var gType=pointTypes[point.id]||'compare';
-  var gp=GAMEPLAY[gType];
-  var overlay=document.getElementById('detailOverlay');
-  var card=document.getElementById('detailCard');
-  overlay.style.setProperty('--route-color',cfg.color);
-  card.style.setProperty('--route-color',cfg.color);
-
-  var html=
-    '<div style="height:4px;background:'+cfg.color+'"></div>'+
-    '<div class="card-header">'+
-      '<div style="flex:1">'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+
-          '<span class="card-type-tag '+gType+'">'+gp.icon+' '+gp.label+'</span>'+
-          '<span style="font-size:11px;color:var(--ink-light);font-family:var(--font-display)">'+point.id+'</span>'+
-        '</div>'+
-        '<div class="card-name">'+point.name+'</div>'+
-        '<div class="card-year" style="color:'+cfg.color+'">'+point.year+'年 · '+cfg.name+'</div>'+
+function renderPointsList(route){
+  var c=document.getElementById('pointsList');c.innerHTML='';
+  route.points.forEach(function(pt,i){
+    var repaired=isRepaired(pt.id);
+    var card=document.createElement('div');
+    card.className='point-card'+(repaired?' repaired':'');
+    card.innerHTML=
+      '<div class="pc-top">'+
+        '<span class="pc-id">'+pt.id+'</span>'+
+        (repaired?'<span class="pc-repair-badge">✓ 已修复</span>':'')+
       '</div>'+
-      '<button class="card-close" onclick="closeDetail()">✕</button>'+
-    '</div>'+
-    '<div class="card-body">'+
-      '<div class="card-story">'+point.story+'</div>';
-
-  if(isUnlocked(pointId)){
-    html+='<div style="padding:14px;border-radius:var(--radius);background:rgba(90,143,90,.06);border:1px solid rgba(90,143,90,.15);font-size:13px;text-align:center;font-family:var(--font-display)">✅ 已修复 · '+point.year+'年记忆已归档</div>';
-  }else{
-    html+=buildGameMechanic(point,gType);
-  }
-  html+='</div>';
-  card.innerHTML=html;
-  overlay.classList.add('show');
-
-  // Hook up game events
-  if(!isUnlocked(pointId)){
-    if(gType==='puzzle')initPuzzle(point);
-    else if(gType==='sort')initSort(point);
-    else if(gType==='voice')initVoice(point);
-    else if(gType==='compare')initCompare(point);
-  }
-}
-
-/* ================================================================
-   GAME MECHANIC: PUZZLE
-   ================================================================ */
-function buildPuzzleHTML(point){
-  return '<div class="game-area">'+
-    '<div class="game-label">🧩 拼图修复 — 拖动碎片还原历史照片</div>'+
-    '<div class="puzzle-grid" id="puzzleGrid_'+point.id+'"></div>'+
-    '<div class="puzzle-pieces" id="puzzlePieces_'+point.id+'"></div>'+
-    '<button class="btn-restore" id="puzzleCompleteBtn_'+point.id+'" disabled>等待拼合完成…</button>'+
-  '</div>';
-}
-
-function initPuzzle(point){
-  var pid=point.id;
-  var grid=document.getElementById('puzzleGrid_'+pid);
-  var pieces=document.getElementById('puzzlePieces_'+pid);
-  var btn=document.getElementById('puzzleCompleteBtn_'+pid);
-  if(!grid||!pieces)return;
-
-  // Create 4 slots
-  for(var r=0;r<2;r++)for(var c=0;c<2;c++){
-    var slot=document.createElement('div');
-    slot.className='puzzle-slot';
-    slot.dataset.row=r;slot.dataset.col=c;
-    slot.addEventListener('dragover',function(e){e.preventDefault()});
-    slot.addEventListener('drop',function(e){e.preventDefault();var pieceId=e.dataTransfer.getData('text/plain');placePiece(pid,slot,pieceId)});
-    grid.appendChild(slot);
-  }
-
-  // Create 4 pieces in shuffled order
-  var order=[0,1,2,3];
-  for(var i=order.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=order[i];order[i]=order[j];order[j]=t}
-  var placed={};
-  order.forEach(function(idx){
-    var r=Math.floor(idx/2),c=idx%2;
-    var piece=document.createElement('div');
-    piece.className='puzzle-piece';
-    piece.draggable=true;
-    piece.id='piece_'+pid+'_'+idx;
-    piece.dataset.correctRow=r;
-    piece.dataset.correctCol=c;
-    piece.style.background='linear-gradient(135deg,'+ROUTES[point.route].color+'33,'+ROUTES[point.route].color+'66)';
-    piece.style.display='flex';piece.style.alignItems='center';piece.style.justifyContent='center';
-    piece.style.fontSize='24px';piece.style.color='var(--ink-light)';
-    piece.innerHTML='🖼️';
-    piece.addEventListener('dragstart',function(e){e.dataTransfer.setData('text/plain',this.id);this.classList.add('dragging')});
-    piece.addEventListener('dragend',function(e){this.classList.remove('dragging')});
-    // Touch support
-    piece.addEventListener('touchstart',function(e){
-      this._touchDragging=true;this.classList.add('dragging');
-      var t=e.touches[0];this._touchOffX=t.clientX-this.getBoundingClientRect().left;this._touchOffY=t.clientY-this.getBoundingClientRect().top;
-    });
-    piece.addEventListener('touchmove',function(e){
-      if(!this._touchDragging)return;e.preventDefault();
-      this.style.position='fixed';this.style.zIndex='999';
-      this.style.left=(e.touches[0].clientX-this._touchOffX)+'px';
-      this.style.top=(e.touches[0].clientY-this._touchOffY)+'px';
-    });
-    piece.addEventListener('touchend',function(e){
-      if(!this._touchDragging){this._touchDragging=false;return}
-      this._touchDragging=false;this.classList.remove('dragging');
-      this.style.position='';this.style.zIndex='';this.style.left='';this.style.top='';
-      // Check which slot it's over
-      var slots=grid.querySelectorAll('.puzzle-slot');
-      var cx=e.changedTouches[0].clientX,cy=e.changedTouches[0].clientY;
-      slots.forEach(function(s){
-        var r=s.getBoundingClientRect();
-        if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){
-          placePiece(pid,s,piece.id);
-        }
-      });
-    });
-    pieces.appendChild(piece);
+      '<div class="pc-name">'+pt.name+' <span style="font-size:11px;color:var(--text-muted)">('+pt.year+')</span></div>'+
+      '<div class="pc-tags">'+
+        '<span class="pc-tag '+getTypeClass(pt.type)+'">'+pt.type+'</span>'+
+        '<span class="pc-tag '+getPlayClass(pt.play)+'">'+pt.play+'</span>'+
+      '</div>'+
+      '<div class="pc-task">'+pt.task+'</div>'+
+      '<div class="pc-desc">'+pt.desc+'</div>'+
+      '<div class="pc-reward">🏆 '+pt.reward+'</div>'+
+      '<button class="pc-btn'+(repaired?' done':'')+'" onclick="event.stopPropagation();openGameModal(\''+pt.id+'\')">'+(repaired?'✅ 已修复':'🔧 开始修复')+'</button>';
+    card.onclick=function(){map.setView([pt.lat,pt.lng],16);if(currentMarkers[i])currentMarkers[i].openPopup();};
+    c.appendChild(card);
   });
-
-  window['_puzzleState_'+pid]={placed:{},totalPlaced:0};
 }
 
-function placePiece(pid,slot,pieceId){
-  var state=window['_puzzleState_'+pid];if(!state)return;
-  var piece=document.getElementById(pieceId);if(!piece||state.placed[pieceId])return;
-  var cr=parseInt(slot.dataset.row),cc=parseInt(slot.dataset.col);
-  var pr=parseInt(piece.dataset.correctRow),pc=parseInt(piece.dataset.correctCol);
-  if(cr===pr&&cc===pc){
-    slot.classList.add('filled');
-    piece.classList.add('placed');
-    piece.parentNode&&piece.parentNode.removeChild(piece);
-    slot.appendChild(piece);
-    state.placed[pieceId]=true;state.totalPlaced++;
-    if(state.totalPlaced===4){
-      var btn=document.getElementById('puzzleCompleteBtn_'+pid);
-      if(btn){btn.disabled=false;btn.textContent='🎉 拼合成功！点击修复';btn.onclick=function(){doRestore(pid)}};
-      showSparkles(slot);
-    }
-  }else{
-    slot.style.borderColor='var(--danger)';
-    setTimeout(function(){slot.style.borderColor=''},500);
-  }
+/* ============================================================
+   GAME MODALS
+   ============================================================ */
+function findPointById(id){
+  for(var i=0;i<ROUTES.length;i++){for(var j=0;j<ROUTES[i].points.length;j++){if(ROUTES[i].points[j].id===id)return ROUTES[i].points[j];}}
+  return null;
 }
 
-/* ================================================================
-   GAME MECHANIC: TIME SORT
-   ================================================================ */
-function buildSortHTML(point){
-  var data=sortData[point.id]||[{year:'?',label:'待补充',desc:''}];
-  // Shuffle for display
-  var shuffled=data.slice().sort(function(){return Math.random()-.5});
-  var html='<div class="game-area"><div class="game-label">⏳ 时间排序 — 按时间先后点击排列</div><div class="sort-list" id="sortList_'+point.id+'">';
-  shuffled.forEach(function(item,i){
-    html+='<div class="sort-item" data-index="'+i+'" data-year="'+item.year+'" onclick="sortClick(\''+point.id+'\','+i+')">'+
-      '<span class="sort-item-num">'+(i+1)+'</span>'+
-      '<div style="flex:1"><strong style="font-size:13px">'+item.label+'</strong>'+
-      '<div class="sort-item-label">'+item.desc+'</div></div>'+
-      '<span style="font-size:13px;color:var(--ink-light)">'+item.year+'</span></div>';
-  });
-  html+='</div><div class="sort-status" id="sortStatus_'+point.id+'"></div>'+
-    '<button class="sort-btn" id="sortConfirmBtn_'+point.id+'" disabled onclick="confirmSort(\''+point.id+'\')">确认排序</button></div>';
-  return html;
-}
+function openGameModal(pointId){
+  var pt=findPointById(pointId);if(!pt)return;
+  var overlay=document.createElement('div');overlay.className='modal-overlay';overlay.id='gameModal';
+  var box=document.createElement('div');box.className='modal-box';
+  var gameComplete=false;
 
-function initSort(point){
-  window['_sortState_'+point.id]={selected:[],correct:sortData[point.id]||[]};
-}
-function sortClick(pid,index){
-  var state=window['_sortState_'+pid];if(!state)return;
-  var list=document.getElementById('sortList_'+pid);if(!list)return;
-  var items=list.querySelectorAll('.sort-item');
-  var correct=state.correct.map(function(d){return d.year});
-
-  if(state.selected.includes(index)){
-    state.selected=state.selected.filter(function(s){return s!==index});
-    items[index].classList.remove('selected');
-  }else{
-    state.selected.push(index);items[index].classList.add('selected');
+  function closeModal(){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);}
+  function setBtnDone(){
+    var btn=box.querySelector('.modal-btn');if(btn){btn.classList.add('done');btn.textContent='✅ 确认修复';btn.onclick=function(){completeRepair(pointId,pt,overlay);};}
   }
 
-  var btn=document.getElementById('sortConfirmBtn_'+pid);
-  if(state.selected.length===correct.length)btn.disabled=false;else btn.disabled=true;
-}
-function confirmSort(pid){
-  var state=window['_sortState_'+pid];if(!state)return;
-  var correct=state.correct.map(function(d){return d.year});
-  var list=document.getElementById('sortList_'+pid);
-  var status=document.getElementById('sortStatus_'+pid);
-  var items=list.querySelectorAll('.sort-item');
-  var isCorrect=true;
-  state.selected.forEach(function(si,orderIdx){
-    var itemYear=items[si].dataset.year;
-    if(itemYear===correct[orderIdx]){items[si].classList.add('correct')}
-    else{items[si].classList.add('wrong');isCorrect=false}
-  });
-  if(isCorrect){
-    status.innerHTML='<span style="color:var(--success)">✅ 排序正确！历史时间轴已生成</span>';
-    setTimeout(function(){doRestore(pid)},800);
-  }else{
-    status.innerHTML='<span style="color:var(--danger)">❌ 顺序不对，请重新尝试</span>';
-    setTimeout(function(){
-      state.selected=[];items.forEach(function(item){item.classList.remove('selected','correct','wrong')});
-      document.getElementById('sortConfirmBtn_'+pid).disabled=true;status.innerHTML='';
-    },1200);
-  }
+  box.innerHTML=
+    '<button class="modal-close" onclick="arguments[0].stopPropagation();var m=document.getElementById(\'gameModal\');if(m)m.parentNode.removeChild(m);">✕</button>'+
+    '<h3>'+pt.id+' '+pt.name+'</h3>'+
+    '<div class="modal-sub">'+pt.year+' · '+pt.type+' · '+pt.play+'</div>'+
+    '<div id="gameContent"></div>'+
+    '<button class="modal-btn" disabled>请完成修复任务</button>';
+
+  overlay.appendChild(box);document.body.appendChild(overlay);
+
+  var gc=box.querySelector('#gameContent');
+  if(pt.play==='拼图修复'){buildPuzzleGame(gc,pt,setBtnDone);}
+  else if(pt.play==='排序修复'){buildSortGame(gc,pt,setBtnDone);}
+  else if(pt.play==='语音解谜'){buildVoiceGame(gc,pt,setBtnDone);}
+  else{buildCompareGame(gc,pt,setBtnDone);}
+
+  overlay.onclick=function(e){if(e.target===overlay)closeModal();};
+  box.querySelector('.modal-close').onclick=closeModal;
 }
 
-/* ================================================================
-   GAME MECHANIC: VOICE QUIZ
-   ================================================================ */
-function buildVoiceHTML(point){
-  var vd=voiceData[point.id]||['这段历史等待你来聆听…','这是关于什么的？',['历史建筑','著名人物','重要事件'],0];
-  var html='<div class="game-area"><div class="game-label">🎙️ 语音解谜 — 聆听故事后回答问题</div>'+
-    '<div class="voice-player"><button class="btn-play idle" id="voicePlayBtn_'+point.id+'" onclick="playVoice(\''+point.id+'\')">▶</button>'+
-    '<div class="voice-info"><strong>'+ROUTES[point.route].role+'的录音</strong><br>讲述'+point.name+'的故事</div></div>'+
-    '<div class="voice-quiz" id="voiceQuiz_'+point.id+'" style="display:none">'+
-    '<div class="quiz-q">'+vd[1]+'</div><div class="quiz-options">';
-  vd[2].forEach(function(opt,i){
-    html+='<button class="quiz-option" onclick="answerVoice(\''+point.id+'\','+i+')">'+opt+'</button>';
-  });
-  html+='</div><div class="quiz-feedback" id="voiceFeedback_'+point.id+'"></div></div></div>';
-  return html;
-}
-function initVoice(point){
-  window['_voiceAnswered_'+point.id]=false;
-}
-function playVoice(pid){
-  var btn=document.getElementById('voicePlayBtn_'+pid);if(!btn)return;
-  var vd=voiceData[pid]||['这段历史等待你来聆听…'];
-  btn.className='btn-play playing';btn.textContent='⏸';
-
-  if('speechSynthesis' in window){
-    var u=new SpeechSynthesisUtterance(vd[0]);
-    u.lang='zh-CN';u.rate=.9;u.pitch=1;
-    u.onend=function(){btn.className='btn-play idle';btn.textContent='▶';document.getElementById('voiceQuiz_'+pid).style.display=''};
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }else{
-    // Fallback: show text
-    setTimeout(function(){
-      btn.className='btn-play idle';btn.textContent='▶';
-      document.getElementById('voiceQuiz_'+pid).style.display='';
-      alert('语音播放：\n'+vd[0]);
-    },1000);
-  }
-}
-function answerVoice(pid,index){
-  if(window['_voiceAnswered_'+pid])return;
-  window['_voiceAnswered_'+pid]=true;
-  var vd=voiceData[pid]||['','',[],0];
-  var feedback=document.getElementById('voiceFeedback_'+pid);
-  var opts=document.querySelectorAll('#voiceQuiz_'+pid+' .quiz-option');
-  if(index===vd[3]){
-    opts[index].classList.add('chosen-correct');
-    feedback.innerHTML='<span style="color:var(--success)">✅ 回答正确！解锁人物秘密档案…</span>';
-    setTimeout(function(){doRestore(pid)},800);
-  }else{
-    opts[index].classList.add('chosen-wrong');
-    opts[vd[3]].classList.add('chosen-correct');
-    feedback.innerHTML='<span style="color:var(--danger)">正确答案是：'+vd[2][vd[3]]+'</span>';
-    setTimeout(function(){doRestore(pid)},1500);
-  }
-}
-
-/* ================================================================
-   GAME MECHANIC: COMPARE
-   ================================================================ */
-function buildCompareHTML(point){
-  return '<div class="game-area"><div class="game-label">📸 今昔对比 — 穿越时空的对话</div>'+
-    '<div class="compare-box">'+
-      '<div class="compare-photo old"><div class="compare-photo-inner"><div class="compare-emoji">📷</div><div style="font-size:10px;color:var(--ink-light);text-align:center">'+point.oldDesc+'</div></div><div class="compare-photo-img blur" id="compareImg_'+point.id+'" style="display:none"></div><span class="compare-label" style="position:absolute;bottom:4px;right:4px;z-index:2">'+point.year+'年</span></div>'+
-      '<div class="compare-photo now"><div class="compare-photo-inner"><div class="compare-emoji">🏛️</div><div style="font-size:10px;color:var(--ink-light);text-align:center">现在的<br>'+point.name+'</div></div><span class="compare-label" style="position:absolute;bottom:4px;left:4px;z-index:2">如今</span></div>'+
-    '</div>'+
-    '<button class="btn-restore" onclick="simulatePhoto(\''+point.id+'\')" id="simPhotoBtn_'+point.id+'">📷 模拟拍摄对比照</button>'+
-    '<div class="compare-slider-wrap" id="compareSliderWrap_'+point.id+'" style="display:none">'+
-      '<span>'+point.year+'年</span><input type="range" class="compare-slider" min="0" max="100" value="50" oninput="moveCompareSlider(\''+point.id+'\',this.value)"><span>现在</span>'+
-    '</div>'+
-    '<button class="btn-restore" id="compareRestoreBtn_'+point.id+'" style="display:none" onclick="doRestore(\''+point.id+'\')">🔓 修复这段记忆</button>'+
-  '</div>';
-}
-function initCompare(point){
-  window['_compareDone_'+point.id]=false;
-}
-function simulatePhoto(pid){
-  var point=findPoint(pid);if(!point)return;
-  var btn=document.getElementById('simPhotoBtn_'+pid);if(btn){btn.disabled=true;btn.textContent='📷 正在生成…'}
-  var img=document.getElementById('compareImg_'+pid);
-  if(img){
-    img.style.display='';img.classList.add('blur');
-    img.style.background='linear-gradient(135deg,'+ROUTES[point.route].color+'22,'+ROUTES[point.route].color+'55)';
-    setTimeout(function(){img.classList.remove('blur');img.classList.add('clearing')},600);
-    setTimeout(function(){img.classList.remove('clearing');img.classList.add('clear')},1400);
-  }
+function completeRepair(pointId,pt,overlay){
+  if(isRepaired(pointId))return;
+  repairedPoints.push(pointId);saveRepair();
+  // success overlay
+  var so=document.createElement('div');so.className='success-overlay';
+  so.innerHTML='<div class="success-icon">✨</div><div class="success-title">碎片修复成功！</div><div class="success-reward">获得：'+pt.reward+'</div>';
+  document.body.appendChild(so);
+  setTimeout(function(){if(so.parentNode)so.parentNode.removeChild(so);},2200);
+  // close game modal
+  if(overlay.parentNode)overlay.parentNode.removeChild(overlay);
+  // refresh UI
   setTimeout(function(){
-    document.getElementById('compareSliderWrap_'+pid).style.display='';
-    var rb=document.getElementById('compareRestoreBtn_'+pid);if(rb)rb.style.display='';
-    if(btn)btn.textContent='✅ 对比照已生成';
-  },2000);
-}
-function moveCompareSlider(pid,val){
-  var img=document.getElementById('compareImg_'+pid);
-  if(!img)return;
-  img.style.clipPath='inset(0 '+(100-val)+'% 0 0)';
+    updateProgress();
+    selectRoute(activeRouteIdx);
+    updateArchiveBadge();
+  },400);
 }
 
-/* ================================================================
-   GAME MECHANIC DISPATCH
-   ================================================================ */
-function buildGameMechanic(point,gType){
-  switch(gType){
-    case 'puzzle':return buildPuzzleHTML(point);
-    case 'sort':return buildSortHTML(point);
-    case 'voice':return buildVoiceHTML(point);
-    case 'compare':return buildCompareHTML(point);
-    default:return buildCompareHTML(point);
-  }
-}
-
-/* ================================================================
-   RESTORE — unified unlock flow
-   ================================================================ */
-function doRestore(pointId){
-  if(isUnlocked(pointId))return;
-  var point=findPoint(pointId);if(!point)return;
-  var cfg=ROUTES[point.route];
-  var gType=pointTypes[point.id]||'compare';
-
-  // Show restore animation
-  showRestoreFlash();
-  showSparkles(document.getElementById('detailCard'));
-
-  // Update marker
-  setUnlocked(pointId);
-  if(markers[pointId])refreshMarker(point);
-
-  // Update card UI
-  var card=document.getElementById('detailCard');
-  if(card){
-    card.querySelector('.card-body').innerHTML=
-      '<div class="card-story">'+point.story+'</div>'+
-      '<div style="padding:14px;border-radius:var(--radius);background:rgba(90,143,90,.06);border:1px solid rgba(90,143,90,.15);font-size:13px;text-align:center;font-family:var(--font-display)">✅ 已修复 · '+point.year+'年记忆已归档</div>'+
-      buildClueReward(point.route);
-  }
-
-  updateAllUI();refreshRoute();
-
-  // Toast
-  var t=document.getElementById('toast');
-  t.querySelector('.toast-emoji').textContent='🧩';
-  t.querySelector('.toast-sub').textContent='修复完成：'+point.name+'（'+point.year+'年）';
-  t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2200);
-
-  // Route complete check
-  if(countRoute(point.route)===10){
-    setTimeout(function(){
-      var t2=document.getElementById('toast');
-      t2.querySelector('.toast-emoji').textContent='🏅';
-      t2.querySelector('.toast-sub').textContent=cfg.name+' · 全线修复！获得"'+cfg.rewardBadge+'"称号';
-      t2.classList.add('show');setTimeout(function(){t2.classList.remove('show')},3500);
-    },2500);
-  }
-  // All 40
-  if(totalUnlocked()===40){
-    setTimeout(function(){
-      var t3=document.getElementById('toast');
-      t3.querySelector('.toast-emoji').textContent='🏆';
-      t3.querySelector('.toast-sub').textContent='武汉历史档案 · 完全修复！';
-      t3.classList.add('show');setTimeout(function(){t3.classList.remove('show')},4000);
-    },3000);
-  }
-}
-
-function buildClueReward(routeId){
-  var cfg=ROUTES[routeId];
-  var count=countRoute(routeId);
-  var html='<div class="route-story-reward">';
-  html+='<strong>'+cfg.role+' · '+cfg.story+'</strong><br>';
-  html+=cfg.narrative+'<br>';
-  html+='已收集 '+cfg.clue+'：<strong>'+count+'/10</strong>';
-  if(count===10){
-    html+='<br>🏅 <strong>获得称号：'+cfg.rewardBadge+'</strong><br>';
-    html+='📂 解锁：'+cfg.rewardTitle;
-  }else{
-    var remaining=10-count;
-    html+='<br>还差 <strong>'+remaining+'</strong> 条'+cfg.clue+'即可解锁"'+cfg.rewardTitle+'"';
-  }
+/* ---- PUZZLE ---- */
+function buildPuzzleGame(gc,pt,setBtnDone){
+  var slots=[0,0,0,0]; // which piece placed
+  var pieces=['↖️','↗️','↙️','↘️'];
+  var shuffled=pieces.slice().sort(function(){return Math.random()-.5;});
+  var placedCount=0;
+  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">拖动下方emoji到正确位置拼合图片</div>';
+  html+='<div class="puzzle-grid">';
+  for(var i=0;i<4;i++){html+='<div class="puzzle-slot" id="slot'+i+'" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>';}
+  html+='</div><div class="puzzle-pieces">';
+  for(var j=0;j<4;j++){html+='<div class="puzzle-piece" id="piece'+j+'" draggable="true" ondragstart="dragStartHandler(event)">'+shuffled[j]+'</div>';}
   html+='</div>';
-  return html;
+  gc.innerHTML=html;
+
+  window.dragStartHandler=function(e){e.dataTransfer.setData('text',e.target.id);};
+  window.dragOverHandler=function(e){e.preventDefault();};
+  window.dropHandler=function(e){
+    e.preventDefault();
+    var pieceId=e.dataTransfer.getData('text');
+    var pieceEl=document.getElementById(pieceId);
+    var slotEl=e.target.closest('.puzzle-slot');if(!slotEl)return;
+    var slotIdx=parseInt(slotEl.id.replace('slot',''));
+    if(slots[slotIdx]!==0)return;
+    slots[slotIdx]=parseInt(pieceId.replace('piece',''));
+    slotEl.textContent=shuffled[slots[slotIdx]];
+    slotEl.classList.add('filled');
+    pieceEl.classList.add('placed');
+    placedCount++;
+    if(placedCount===4){
+      var btn=document.querySelector('#gameModal .modal-btn');
+      btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 确认修复';
+      btn.onclick=function(){setBtnDone();};
+    }
+  };
 }
 
-/* ================================================================
-   EFFECTS
-   ================================================================ */
-function showRestoreFlash(){
-  var el=document.getElementById('restoreFlash');
-  el.classList.remove('active');void el.offsetWidth;el.classList.add('active');
-}
-function showSparkles(origin){
-  var container=document.getElementById('restoreSparkles');
-  if(!origin||!container)return;
-  var emojis=['✨','💫','⭐','🌟','💎','🔮','📜','🏛️'];
-  var rect=origin.getBoundingClientRect();
-  var cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
-  for(var i=0;i<12;i++){
-    var sp=document.createElement('div');
-    sp.className='restore-sparkle';
-    sp.textContent=emojis[Math.floor(Math.random()*emojis.length)];
-    sp.style.left=cx+'px';sp.style.top=cy+'px';
-    sp.style.setProperty('--sx',(Math.random()*40-20)+'px');
-    sp.style.setProperty('--sy',(Math.random()*-60-20)+'px');
-    sp.style.setProperty('--ex',(Math.random()*200-100)+'px');
-    sp.style.setProperty('--ey',(Math.random()*-200-100)+'px');
-    sp.style.animationDelay=(Math.random()*.3)+'s';
-    sp.style.fontSize=(14+Math.random()*12)+'px';
-    container.appendChild(sp);
-    setTimeout(function(){sp.remove()},2000);
+/* ---- SORT ---- */
+function buildSortGame(gc,pt,setBtnDone){
+  var events=[];
+  if(pt.id==='H-11'){
+    events=[
+      {year:'1911年10月9日',desc:'起义计划泄露，彭楚藩等三人被捕就义'},
+      {year:'1911年10月10日',desc:'武昌起义第一枪在工程营打响'},
+      {year:'1911年10月11日',desc:'湖北军政府成立，推举黎元洪为都督'}
+    ];
+  }else if(pt.id==='H-12'){
+    events=[
+      {year:'1911年10月10日',desc:'武昌起义爆发'},
+      {year:'1911年10月11日',desc:'湖北军政府（红楼）成立'},
+      {year:'1912年1月1日',desc:'中华民国成立，孙中山就任临时大总统'}
+    ];
+  }else if(pt.id==='H-15'){
+    events=[
+      {year:'1921年7月',desc:'中共一大在上海召开'},
+      {year:'1927年4月',desc:'中共五大在武汉召开'},
+      {year:'1927年8月',desc:'八七会议在汉口召开'}
+    ];
+  }else{
+    events=[
+      {year:'1911年10月10日',desc:'武昌起义爆发'},
+      {year:'1911年10月11日',desc:'湖北军政府成立'},
+      {year:'1912年1月1日',desc:'中华民国成立'}
+    ];
   }
+  var correctOrder=events.map(function(_,i){return i;});
+  var shuffled=events.slice().sort(function(){return Math.random()-.5;});
+  var selected=[];
+  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">按时间先后顺序点击选择</div>';
+  html+='<div class="sort-list">';
+  shuffled.forEach(function(ev,i){
+    html+='<div class="sort-item" id="sortItem'+i+'" onclick="selectSortItem('+i+',\''+ev.year+'\')"><div class="sort-year">📅 年份未知</div><div class="sort-desc">'+ev.desc+'</div></div>';
+  });
+  html+='</div><div class="sort-pick-order" id="sortOrder">请按时间先后点击...</div>';
+  gc.innerHTML=html;
+  gc._shuffled=shuffled;gc._events=events;gc._selected=selected;gc._correctOrder=correctOrder;
 }
 
-/* ================================================================
-   ARCHIVE MODAL
-   ================================================================ */
+window.selectSortItem=function(idx,yearStr){
+  var gc=document.getElementById('gameContent');if(!gc||!gc._shuffled)return;
+  var item=document.getElementById('sortItem'+idx);
+  if(gc._selected.indexOf(idx)!==-1)return;
+  gc._selected.push(idx);
+  item.classList.add('selected');
+  item.querySelector('.sort-year').textContent='📅 '+yearStr;
+  var orderEl=document.getElementById('sortOrder');
+  orderEl.textContent='已选顺序：'+gc._selected.map(function(si,i){return (i+1)+'. '+gc._shuffled[si].desc.substring(0,8)+'...';}).join(' → ');
+  if(gc._selected.length===3){
+    // check order
+    var correct=true;
+    for(var i=0;i<3;i++){if(gc._selected[i]!==gc._correctOrder[i]){correct=false;break;}}
+    if(correct){
+      var items=gc.querySelectorAll('.sort-item');
+      items.forEach(function(it){it.classList.add('correct');});
+      var btn=document.querySelector('#gameModal .modal-btn');
+      btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 确认修复';
+      btn.onclick=function(){setBtnDone();};
+    }else{
+      orderEl.textContent='❌ 顺序错误，请重试！';
+      var items=gc.querySelectorAll('.sort-item');
+      items.forEach(function(it){it.classList.add('wrong');});
+      setTimeout(function(){
+        items.forEach(function(it){it.classList.remove('selected','wrong');});
+        gc._selected=[];orderEl.textContent='请按时间先后点击...';
+        items.forEach(function(it,i){it.querySelector('.sort-year').textContent='📅 年份未知';});
+      },800);
+    }
+  }
+};
+
+/* ---- VOICE ---- */
+function buildVoiceGame(gc,pt,setBtnDone){
+  var played=false;
+  var question,options,correctAns;
+  if(pt.id==='H-16'){
+    question='毛泽东在武昌农讲所主要培养的是哪类人才？';
+    options=['军事指挥人才','农民运动骨干','工业技术人才'];correctAns=1;
+  }else if(pt.id==='H-22'){
+    question='"高山流水"故事中，钟子期听出了伯牙琴声中的什么意境？';
+    options=['高山和流水','战场和厮杀','田园和牧歌'];correctAns=0;
+  }else{
+    question='这个历史人物与以下哪个事件有关？';
+    options=['选项A','选项B','选项C'];correctAns=0;
+  }
+  var html='<div class="voice-player">';
+  html+='<button class="voice-btn" id="voicePlayBtn" onclick="playVoice()">▶️</button>';
+  html+='<div class="voice-status" id="voiceStatus">点击播放历史故事</div></div>';
+  html+='<div class="voice-question" id="voiceQuestion" style="display:none">'+question+'</div>';
+  html+='<div class="voice-options" id="voiceOptions" style="display:none">';
+  options.forEach(function(opt,i){html+='<div class="voice-opt" id="voiceOpt'+i+'" onclick="selectVoiceOpt('+i+','+correctAns+')">'+opt+'</div>';});
+  html+='</div>';
+  gc.innerHTML=html;
+  gc._correctAns=correctAns;
+}
+
+window.playVoice=function(){
+  var btn=document.getElementById('voicePlayBtn');if(!btn)return;
+  btn.classList.add('playing');btn.textContent='⏳';
+  document.getElementById('voiceStatus').textContent='正在播放：历史故事...';
+  setTimeout(function(){
+    btn.classList.remove('playing');btn.textContent='✅';
+    document.getElementById('voiceStatus').textContent='播放完成！请回答问题';
+    document.getElementById('voiceQuestion').style.display='';
+    document.getElementById('voiceOptions').style.display='';
+  },3000);
+};
+
+window.selectVoiceOpt=function(idx,correctAns){
+  var opt=document.getElementById('voiceOpt'+idx);if(!opt)return;
+  if(idx===correctAns){
+    opt.classList.add('correct');
+    var opts=document.querySelectorAll('#gameContent .voice-opt');
+    for(var i=0;i<opts.length;i++){opts[i].style.pointerEvents='none';}
+    var btn=document.querySelector('#gameModal .modal-btn');
+    btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 确认修复';
+    btn.onclick=function(){setBtnDone();};
+  }else{
+    opt.classList.add('wrong');
+    setTimeout(function(){opt.classList.remove('wrong');},1000);
+  }
+};
+
+/* ---- COMPARE ---- */
+function buildCompareGame(gc,pt,setBtnDone){
+  var dragged=false;
+  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">拖动中间滑块对比今昔</div>';
+  html+='<div class="compare-container" id="compareContainer">';
+  html+='<div class="compare-old"><span style="font-size:48px">📷</span><div>老照片</div><div class="compare-label">'+pt.year+'</div></div>';
+  html+='<div class="compare-new" id="compareNew"><span style="font-size:48px">📷</span><div>现在</div><div class="compare-label">2024年</div></div>';
+  html+='<div class="compare-handle" id="compareHandle"></div></div>';
+  gc.innerHTML=html;
+  var handle=document.getElementById('compareHandle');
+  var container=document.getElementById('compareContainer');
+  var newEl=document.getElementById('compareNew');
+
+  function onMove(e){
+    var rect=container.getBoundingClientRect();
+    var x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
+    var pct=Math.max(5,Math.min(95,(x/rect.width)*100));
+    handle.style.left=pct+'%';
+    newEl.style.clipPath='inset(0 '+(100-pct)+'% 0 0)';
+    dragged=true;
+  }
+
+  handle.addEventListener('mousedown',function(e){e.preventDefault();window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',function(){window.removeEventListener('mousemove',onMove);if(dragged){var btn=document.querySelector('#gameModal .modal-btn');btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 完成对比，确认修复';btn.onclick=function(){setBtnDone();};}},{once:true});});
+  handle.addEventListener('touchstart',function(e){e.preventDefault();window.addEventListener('touchmove',onMove);window.addEventListener('touchend',function(){window.removeEventListener('touchmove',onMove);if(dragged){var btn=document.querySelector('#gameModal .modal-btn');btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 完成对比，确认修复';btn.onclick=function(){setBtnDone();};}},{once:true});});
+}
+
+/* ============================================================
+   ARCHIVE
+   ============================================================ */
 function openArchive(){
-  var modal=document.getElementById('archiveModal');
-  updateArchiveContent();
-  modal.classList.add('show');
-}
-function closeArchive(){
-  document.getElementById('archiveModal').classList.remove('show');
-}
-function updateArchiveContent(){
-  // Route progress
-  var progressHTML='';
-  Object.keys(ROUTES).forEach(function(rid){
-    var cfg=ROUTES[rid];var cnt=countRoute(rid);
-    progressHTML+='<div class="archive-route-progress">'+
-      '<span class="rp-icon">'+cfg.icon+'</span><span class="rp-name">'+cfg.name+'</span>'+
-      '<div class="rp-bar"><div class="rp-fill" style="width:'+(cnt*10)+'%;background:'+cfg.color+'"></div></div>'+
-      '<span class="rp-count">'+cnt+'/10</span></div>';
+  var overlay=document.createElement('div');overlay.className='archive-overlay';overlay.id='archiveOverlay';
+  var totalRepaired=getRepairedCount();
+
+  var html='<div class="archive-header"><h3>📚 武汉历史档案</h3><button class="archive-close" onclick="var m=document.getElementById(\'archiveOverlay\');if(m)m.parentNode.removeChild(m);">✕</button></div>';
+  html+='<div class="archive-progress">';
+  ROUTES.forEach(function(r){
+    var rc=0;r.points.forEach(function(p){if(isRepaired(p.id))rc++;});
+    html+='<div class="archive-route-progress"><span class="rp-name" style="color:'+r.color+'">'+r.emoji+' '+r.name+'</span><div class="rp-bar"><div class="rp-bar-inner" style="width:'+((rc/r.points.length)*100)+'%;background:'+r.color+'"></div></div><span class="rp-num">'+rc+'/'+r.points.length+'</span></div>';
   });
-  document.getElementById('archiveProgressSection').innerHTML=progressHTML;
+  html+='</div>';
 
-  var total=totalUnlocked();
-  document.getElementById('archiveTotal').innerHTML='总计修复 <strong>'+total+'</strong>/40 个历史碎片';
-
-  // Cards
-  var cardsHTML='';
-  var unlockedPoints=POINTS.filter(function(p){return isUnlocked(p.id)});
-  var emptyEl=document.getElementById('archiveEmpty');
-  if(unlockedPoints.length===0){emptyEl.style.display=''}else{emptyEl.style.display='none'}
-  unlockedPoints.forEach(function(p){
-    var cfg=ROUTES[p.route];
-    var gType=pointTypes[p.id]||'compare';
-    var gp=GAMEPLAY[gType];
-    cardsHTML+=
-      '<div class="archive-card-item" onclick="this.classList.toggle(\'flipped\')">'+
-        '<div class="archive-card-inner">'+
-          '<div class="archive-card-front" style="border-color:'+cfg.color+'44">'+
-            '<span class="archive-card-emoji">'+cfg.roleEmoji+'</span>'+
-            '<span class="archive-card-label">'+p.name+'<br>'+p.year+'年</span>'+
-          '</div>'+
-          '<div class="archive-card-back">'+
-            '<span class="archive-card-back-icon">'+gp.icon+'</span>'+
-            '<span class="archive-card-label">'+gp.label+'<br>已修复</span>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
+  // All 25 cards
+  var allPoints=[];
+  ROUTES.forEach(function(r){r.points.forEach(function(p){allPoints.push({point:p,route:r});});});
+  html+='<div class="archive-grid">';
+  allPoints.forEach(function(item){
+    var p=item.point,r=item.route;var unlocked=isRepaired(p.id);
+    html+='<div class="archive-card '+(unlocked?'unlocked':'locked')+'">';
+    if(unlocked){
+      html+='<div class="arc-icon">✅</div><div class="arc-id">'+p.id+'</div><div class="arc-name">'+p.name+'</div>';
+    }else{
+      html+='<div class="arc-icon">🔒</div><div class="arc-id">???</div><div class="arc-name">???</div>';
+    }
+    html+='</div>';
   });
-  document.getElementById('archiveCards').innerHTML=cardsHTML;
+  html+='</div>';
+
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
+  overlay.onclick=function(e){if(e.target===overlay){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);}};
 }
 
-/* ================================================================
-   THEORY MODAL
-   ================================================================ */
-function openTheory(){
-  document.getElementById('theoryModal').classList.add('show');
-}
-function closeTheory(){
-  document.getElementById('theoryModal').classList.remove('show');
+function updateArchiveBadge(){
+  var cnt=getRepairedCount();var badge=document.getElementById('archiveBadge');
+  if(cnt>0){badge.style.display='flex';badge.textContent=cnt;}else{badge.style.display='none';}
 }
 
-/* ================================================================
-   DETAIL CLOSE
-   ================================================================ */
-function closeDetail(){
-  document.getElementById('detailOverlay').classList.remove('show');
-  detailPointId=null;
-  // Cancel speech if playing
-  if('speechSynthesis' in window)speechSynthesis.cancel();
+/* ============================================================
+   PROGRESS
+   ============================================================ */
+function updateProgress(){
+  var cnt=getRepairedCount();
+  document.getElementById('progressDone').textContent=cnt;
+  document.getElementById('progressBar').style.width=((cnt/25)*100)+'%';
+  document.getElementById('totalPoints').textContent=25;
 }
 
-/* ================================================================
+/* ============================================================
    INIT
-   ================================================================ */
-document.addEventListener('DOMContentLoaded',function(){
-  updateHeaderIdentity();
-  updateAllUI();updateBottomBar();
-  // Preload map if AMap available
-  if(typeof AMap!=='undefined')initMap();
-});
-
-document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'){closeDetail();closeArchive();closeTheory()}
-});
-
-window.onAMapLoad=function(){initMap();};
+   ============================================================ */
+function init(){
+  initMap();
+  renderRouteSelector();
+  updateProgress();
+  updateArchiveBadge();
+  selectRoute(0);
+}
+document.addEventListener('DOMContentLoaded',init);
 </script>
 
-<script src="https://webapi.amap.com/maps?v=2.0&key=fccd5deb1e286e4bac372e8073838a31&callback=onAMapLoad" async defer></script>
 </body>
 </html>
