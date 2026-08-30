@@ -2,678 +2,950 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>江城往事 — 时间修复师</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>江城游记 · 可玩城市版 — 武汉多层交互地图</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-/* ============================================================
-   CSS RESET & DESIGN TOKENS
-   ============================================================ */
-*{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#FAF0E6;--card-bg:#FFF8F0;--border:#D4C5B2;--border-dim:#E0D5C5;
-  --text-main:#3C2F28;--text-body:#4A3B33;--text-muted:#6B5D4F;--text-faint:#9B8D7F;
-  --blue:#B8860B;--blue-hover:#D4A030;--blue-text:#8B6914;
-  --green:#5B8C5A;--orange:#D4843A;--red:#C45A4A;--purple:#7B6BA6;
-  --h1-color:var(--orange);--h2-color:var(--red);--h3-color:var(--green);--h4-color:var(--purple);
+  --bg:#F4E8D0;--bg2:#EDE0C2;--card-bg:rgba(255,252,242,.94);
+  --text-main:#3C2F28;--text-muted:#8A7356;--text-faint:#B8A57E;
+  --gold:#B8860B;--gold-light:#D4AF37;--green:#5B8C5A;--red:#8B0000;
+  --border-dim:rgba(184,134,11,.28);--shadow:0 6px 22px rgba(60,47,40,.16);
+  --accent:#8B6914;
 }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%}
 body{
-  font-family:"KaiTi","STKaiti","PingFang SC","Microsoft YaHei","Noto Sans SC",serif;
-  background:var(--bg);color:var(--text-body);overflow-x:hidden;min-height:100vh;
-  background-image:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  font-family:'STKaiti','KaiTi','Songti SC','SimSun',serif;
+  background:linear-gradient(160deg,#F9F1DC 0%,#EFE2C3 45%,#E4D3AC 100%);
+  color:var(--text-main);overflow:hidden;
 }
-/* ---- header ---- */
+/* ---------------- 顶部 ---------------- */
 .header{
-  background:linear-gradient(135deg,#F5EDE0 0%,#EDE1D0 100%);
-  padding:18px 20px 14px;border-bottom:2px solid #D4C5B2;
-  position:relative;overflow:hidden;
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 12px;background:var(--card-bg);
+  border-bottom:2px solid var(--border-dim);box-shadow:var(--shadow);
 }
-.header::before{
-  content:"";position:absolute;top:0;left:0;right:0;bottom:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238B6914' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  opacity:0.8;
+.header-left{display:flex;align-items:baseline;gap:8px;min-width:0}
+.header-left h1{font-size:20px;letter-spacing:3px;color:var(--text-main);white-space:nowrap}
+.header-sub{font-size:11px;color:var(--text-muted);letter-spacing:1px;white-space:nowrap}
+.header-role{
+  font-size:12px;color:#fff;padding:4px 10px;border-radius:20px;
+  background:linear-gradient(135deg,var(--accent),#a8862f);
+  box-shadow:0 2px 8px rgba(184,134,11,.4);white-space:nowrap;
+  transition:all .4s ease;
 }
-.header-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
-.header-top h1{font-size:28px;font-weight:700;color:var(--text-main);letter-spacing:6px;font-family:"KaiTi","STKaiti",serif}
-.header-role{font-size:13px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:5px 14px;border-radius:20px;letter-spacing:2px;border:1px solid rgba(184,134,11,0.2)}
-.header-progress{margin-top:12px;position:relative;z-index:1;display:flex;align-items:center;gap:10px}
-.progress-bar-outer{flex:1;height:8px;background:var(--border-dim);border-radius:4px;overflow:hidden}
-.progress-bar-inner{height:100%;background:var(--blue);border-radius:4px;transition:width .5s ease;width:0%}
-.progress-text{font-size:13px;color:var(--text-muted);white-space:nowrap}
-.progress-text .done{color:var(--green);font-weight:700}
-/* ---- route selector ---- */
-.route-selector{
-  display:flex;gap:10px;padding:12px 16px;background:var(--card-bg);
-  border-bottom:1px solid var(--border-dim);overflow-x:auto;scrollbar-width:none;
+.header-role b{font-weight:700;letter-spacing:1px}
+/* ---------------- 左侧浮动 图层/路线卡片 ---------------- */
+.layer-dock{
+  position:fixed;top:60px;left:10px;bottom:64px;z-index:640;
+  display:flex;flex-direction:column;gap:8px;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
-.route-selector::-webkit-scrollbar{display:none}
-.route-tab{
-  flex-shrink:0;padding:8px 16px;border-radius:8px;background:#F5EDE0;
-  border:1px solid var(--border);cursor:pointer;transition:all .25s ease;
-  min-width:125px;text-align:center;position:relative;
+.layer-dock::-webkit-scrollbar{display:none}
+.dock-layer-cards{display:flex;flex-direction:column;gap:10px;width:138px}
+/* ---------------- 左侧路线导航（图层列右侧） ---------------- */
+.route-dock{
+  position:fixed;top:60px;left:156px;z-index:640;
+  display:flex;flex-direction:column;gap:10px;
+  max-height:calc(100vh - 130px);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
 }
-.route-tab:hover{background:#EDE1D0;border-color:var(--blue-text)}
-.route-tab.active{border-color:currentColor;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-.route-tab[data-route="0"]{color:var(--h1-color)}
-.route-tab[data-route="1"]{color:var(--h2-color)}
-.route-tab[data-route="2"]{color:var(--h3-color)}
-.route-tab[data-route="3"]{color:var(--h4-color)}
-.route-tab .tab-name{font-size:13px;font-weight:600}
-.route-tab .tab-theme{font-size:11px;opacity:.75;margin-top:2px}
-.route-tab .tab-emoji{font-size:16px;margin-right:4px}
-/* ---- identity card ---- */
-.identity-card{
-  margin:12px 16px;padding:16px 18px;background:var(--card-bg);
-  border-radius:10px;border:1px solid var(--border-dim);position:relative;overflow:hidden;
-  transition:border-color .3s;box-shadow:0 2px 8px rgba(0,0,0,0.04);
+.route-dock::-webkit-scrollbar{display:none}
+.dock-route-cards{display:flex;flex-direction:column;gap:10px;width:200px}
+.layer-card{
+  display:flex;flex-direction:column;justify-content:center;width:100%;min-height:96px;height:96px;
+  text-align:left;cursor:pointer;padding:11px 10px;box-sizing:border-box;
+  border:1px solid var(--border-dim);border-left:4px solid var(--layer-c,#8b6914);border-radius:10px;
+  background:var(--card-bg);box-shadow:var(--shadow);transition:all .25s ease;
 }
-.identity-card .id-title{font-size:11px;color:var(--blue-text);letter-spacing:2px;margin-bottom:6px}
-.identity-card .id-name{font-size:18px;font-weight:700;color:var(--text-main);margin-bottom:6px}
-.identity-card .id-desc{font-size:12px;color:var(--text-muted);line-height:1.6}
-.identity-card .id-reward{display:inline-block;margin-top:8px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
-/* ---- map ---- */
-.map-section{margin:0 16px 12px;border-radius:10px;overflow:hidden;border:1px solid var(--border-dim);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-#map{width:100%;height:380px}
-.custom-marker-container{background:transparent!important;border:none!important}
-.custom-marker{
-  width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:16px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
-  transition:all .3s;
+.layer-card:hover{transform:translateX(3px)}
+.layer-card.active{box-shadow:0 3px 12px rgba(0,0,0,.18);transform:translateX(3px)}
+.layer-card .lc-top{display:flex;align-items:center;gap:8px;margin-bottom:3px;overflow:hidden}
+.layer-card .lc-emoji{font-size:22px;line-height:1}
+.layer-card .lc-name{font-size:15px;font-weight:800;letter-spacing:1px;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-card .lc-ident{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-card .lc-prog{font-size:12px;color:var(--text-faint)}
+/* ---------------- 路线卡片（展开于图层下方） ---------------- */
+.route-card{
+  display:flex;flex-direction:column;justify-content:center;width:100%;min-height:96px;height:96px;
+  text-align:left;cursor:pointer;padding:10px 12px;box-sizing:border-box;
+  border:1px solid var(--border-dim);border-left:3px solid var(--rc-c,#a3712f);border-radius:9px;
+  background:rgba(255,252,242,.9);transition:all .25s ease;
 }
-.custom-marker.repaired{opacity:.6;border-color:var(--green)}
-/* ---- side panel (right floating card) ---- */
-.side-panel-overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.4);
-  z-index:900;display:none;
+.route-card:hover{transform:translateX(2px)}
+.route-card.active{box-shadow:0 2px 8px rgba(0,0,0,.16);transform:translateX(2px)}
+.route-card .rc-top{display:flex;align-items:center;gap:7px;overflow:hidden}
+.route-card .rc-emoji{font-size:18px;flex:0 0 auto}
+.route-card .rc-name{font-size:14px;font-weight:700;letter-spacing:.3px;color:var(--text-main);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.route-card .rc-done{font-size:11px;color:var(--green);font-weight:700;margin-left:auto;flex:0 0 auto}
+.route-card .rc-ident{font-size:12px;color:var(--accent);font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.route-card .rc-prog{display:flex;align-items:center;gap:6px;margin-top:6px;flex-shrink:0}
+.route-card .rc-bar{flex:1;height:5px;border-radius:2px;background:#E8DCBE;overflow:hidden}
+.route-card .rc-bar-inner{height:100%;border-radius:2px;background:var(--rc-c,#a3712f);transition:width .5s ease}
+.route-card .rc-count{font-size:12px;color:var(--text-faint);font-weight:700}
+/* ---------------- 点位名称标注（地图标签） ---------------- */
+.point-label{
+  background:rgba(255,252,242,.98);border:2px solid rgba(139,0,0,.6);
+  color:#2A1E14;font-size:14px;font-weight:800;padding:3px 9px;border-radius:8px;
+  box-shadow:0 2px 8px rgba(60,47,40,.38);white-space:nowrap;letter-spacing:.5px;
 }
-.side-panel-overlay.show{display:block}
+/* ---------------- 地图 ---------------- */
+#map{position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1;background:#d9cfb2}
+.map-hint{
+  position:fixed;left:50%;transform:translateX(-50%);z-index:600;
+  bottom:64px;font-size:12px;color:var(--text-muted);
+  background:rgba(255,252,242,.92);padding:5px 14px;border-radius:20px;
+  border:1px solid var(--border-dim);pointer-events:none;
+  white-space:normal;text-align:center;max-width:92vw;line-height:1.6;
+}
+/* ---------------- 路线面板 ---------------- */
+.route-panel{
+  position:fixed;right:10px;top:60px;bottom:auto;width:min(320px,86vw);z-index:650;
+  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:12px;
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.rp-collapse{
+  padding:7px 12px;font-size:12px;font-weight:700;color:var(--accent);cursor:pointer;
+  background:linear-gradient(180deg,rgba(212,175,55,.16),rgba(237,224,194,.4));
+  border-bottom:1px solid var(--border-dim);letter-spacing:1px;user-select:none;text-align:center;
+}
+#routePanelBody{padding:10px 12px;max-height:34vh;overflow-y:auto}
+.route-panel.collapsed #routePanelBody{display:none}
+.rp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.rp-title{font-size:16px;font-weight:700;color:var(--text-main);letter-spacing:.5px}
+.rp-count{font-size:14px;color:var(--text-muted);font-weight:700}
+.rp-bar{height:6px;border-radius:3px;background:#E8DCBE;overflow:hidden;margin-bottom:8px}
+.rp-bar-inner{height:100%;border-radius:3px;background:var(--gold);transition:width .5s ease}
+.rp-points{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));gap:6px}
+.rp-point{
+  display:flex;align-items:center;gap:6px;padding:7px 9px;cursor:pointer;
+  border:1px dashed rgba(184,134,11,.35);border-radius:8px;
+  background:rgba(255,252,242,.7);transition:all .2s ease;user-select:none;
+}
+.rp-point:hover{background:#F6EBD2;border-color:var(--gold);transform:translateY(-1px)}
+.rp-point.done{background:linear-gradient(90deg,rgba(91,140,90,.16),rgba(255,252,242,.5));border-style:solid;border-color:rgba(91,140,90,.4)}
+.rp-point .rp-n{font-size:12px;color:var(--text-faint);font-weight:700;flex:0 0 auto}
+.rp-point .rp-name{font-size:14px;flex:1;color:var(--text-main);line-height:1.45;min-width:0}
+.rp-point .rp-state{font-size:14px;color:var(--green);flex:0 0 auto}
+.rp-point:not(.done) .rp-state{color:var(--text-faint)}
+.rp-final{
+  margin-top:8px;text-align:center;font-size:13px;font-weight:700;line-height:1.7;
+  color:var(--red);padding:7px 10px;border-radius:8px;
+  background:linear-gradient(90deg,rgba(184,134,11,.18),rgba(212,175,55,.12));
+  border:1px solid var(--border-dim);animation:pop .4s ease;
+}
+@keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+/* ---------------- 点位卡片 ---------------- */
 .side-panel{
-  position:fixed;top:50%;right:20px;transform:translateY(-50%);
-  width:320px;max-width:calc(100vw - 40px);max-height:80vh;
-  background:var(--card-bg);z-index:901;
-  box-shadow:-4px 8px 32px rgba(0,0,0,.18);overflow-y:auto;
-  padding:18px 16px;border-radius:12px;border:1px solid var(--border-dim);
-  opacity:0;pointer-events:none;transition:opacity .25s ease;
+  position:fixed;right:10px;bottom:70px;top:auto;width:min(340px,86vw);max-height:calc(100vh - 150px);
+  z-index:660;background:var(--card-bg);border:1px solid var(--border-dim);
+  border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);overflow-y:auto;
+  display:none;
 }
-.side-panel.open{opacity:1;pointer-events:auto}
-.side-panel .sp-close{
-  float:right;background:none;border:none;color:var(--text-muted);font-size:20px;
-  cursor:pointer;line-height:1;padding:0 0 4px 4px;
+.sp-photo{
+  position:relative;width:100%;height:160px;border-radius:8px;margin-bottom:10px;
+  border:2px solid rgba(201,169,110,.3);overflow:hidden;cursor:pointer;
+  box-shadow:inset 0 2px 12px rgba(60,47,40,.25),0 4px 14px rgba(60,47,40,.2);
+  background:#F3E7C8;
 }
-.side-panel .sp-id{font-size:11px;color:var(--blue-text);background:rgba(184,134,11,0.1);padding:3px 8px;border-radius:3px;font-family:"KaiTi","STKaiti",serif;display:inline-block;margin-bottom:4px}
-.side-panel .sp-name{font-size:18px;font-weight:700;color:var(--text-main);margin-bottom:2px}
-.side-panel .sp-year{font-size:12px;color:var(--text-muted);margin-bottom:6px}
-.side-panel .sp-tags{display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap}
-.sp-tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
-.sp-tag.type-building{background:rgba(212,132,58,0.12);color:var(--orange)}
-.sp-tag.type-event{background:rgba(196,90,74,0.12);color:var(--red)}
-.sp-tag.type-person{background:rgba(123,107,166,0.12);color:var(--purple)}
-.sp-tag.type-life{background:rgba(91,140,90,0.12);color:var(--green)}
-.sp-tag.play-puzzle{background:rgba(184,134,11,0.12);color:var(--blue-text)}
-.sp-tag.play-sort{background:rgba(196,90,74,0.12);color:var(--red)}
-.sp-tag.play-voice{background:rgba(123,107,166,0.12);color:var(--purple)}
-.sp-tag.play-compare{background:rgba(91,140,90,0.12);color:var(--green)}
-.side-panel .sp-task{font-size:12px;color:var(--orange);font-weight:600;margin-top:4px}
-.side-panel .sp-desc{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.6}
-.side-panel .sp-reward{font-size:12px;color:var(--green);margin-top:6px}
-.side-panel .sp-btn{
-  display:block;width:100%;margin-top:12px;padding:10px;border-radius:8px;border:none;
-  font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;
-  background:var(--blue);color:#fff;
+.sp-photo img{
+  width:100%;height:100%;object-fit:cover;border-radius:8px;
+  filter:sepia(10%) contrast(105%);
+  opacity:0;transition:opacity .6s ease,transform .4s ease;
 }
-.side-panel .sp-btn:hover{background:var(--blue-hover)}
-.side-panel .sp-btn.done{background:var(--green);pointer-events:none}
-.side-panel .sp-repaired{display:inline-block;margin-left:6px;font-size:10px;color:var(--green);background:rgba(91,140,90,0.1);padding:2px 6px;border-radius:3px;vertical-align:middle}
-/* ---- map hint ---- */
-.map-hint{text-align:center;font-size:11px;color:var(--text-faint);padding:4px 0 10px;margin:0 16px}
-/* ---- modal ---- */
-.modal-overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.6);
-  z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;
+.sp-photo img.loaded{opacity:1}
+.sp-photo:hover img{transform:scale(1.03)}
+.sp-photo .sp-photo-label{
+  position:absolute;top:8px;left:8px;z-index:2;
+  background:rgba(60,47,40,.92);color:#D4AF37;
+  font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;
+  letter-spacing:1px;pointer-events:none;
 }
-.modal-box{
-  background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
-  width:100%;max-width:440px;max-height:85vh;overflow-y:auto;padding:20px;
-  box-shadow:0 8px 32px rgba(0,0,0,.12);
+.sp-photo .sp-fallback{
+  position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;color:var(--text-muted);
+  background:#F3E7C8;border-radius:8px;pointer-events:none;
 }
-.modal-box h3{font-size:17px;color:var(--text-main);margin-bottom:4px}
-.modal-box .modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:14px}
-.modal-close{
-  float:right;background:none;border:none;color:var(--text-muted);font-size:22px;
-  cursor:pointer;line-height:1;
+.sp-photo.error .sp-fallback{display:flex}
+.sp-photo.error img{display:none}
+.sp-fallback .sf-emoji{font-size:46px;margin-bottom:6px}
+.sp-fallback .sf-text{font-size:12px;letter-spacing:1px}
+.lightbox{
+  position:fixed;inset:0;z-index:3000;background:rgba(10,5,2,.95);
+  display:none;align-items:center;justify-content:center;padding:20px;
 }
-/* puzzle */
-.puzzle-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;width:240px;height:240px;margin:10px auto}
-.puzzle-slot{border:2px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:40px;transition:all .3s;background:rgba(245,237,224,0.5)}
-.puzzle-slot.filled{border-color:var(--green);background:rgba(91,140,90,0.08)}
-.puzzle-pieces{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-.puzzle-piece{width:54px;height:54px;border:2px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:28px;cursor:grab;background:#F5EDE0;transition:all .2s}
-.puzzle-piece:active{cursor:grabbing}
-.puzzle-piece.placed{opacity:.3;pointer-events:none}
-/* sort */
-.sort-list{display:flex;flex-direction:column;gap:8px;margin:10px 0}
-.sort-item{padding:12px;border:2px solid var(--border-dim);border-radius:8px;cursor:pointer;background:#F5EDE0;transition:all .2s;text-align:center}
-.sort-item:hover{border-color:var(--blue)}
-.sort-item.selected{border-color:var(--blue);background:rgba(184,134,11,0.08)}
-.sort-item.correct{border-color:var(--green)!important;background:rgba(91,140,90,0.08)!important}
-.sort-item.wrong{border-color:var(--red)!important;animation:shake .5s}
-.sort-item .sort-year{font-size:11px;color:var(--text-muted)}
-.sort-item .sort-desc{font-size:13px;color:var(--text-body);margin-top:2px}
-.sort-pick-order{font-size:11px;color:var(--blue-text);margin-top:6px;min-height:18px}
-/* voice */
-.voice-player{text-align:center;margin:16px 0}
-.voice-btn{width:72px;height:72px;border-radius:50%;border:2px solid var(--blue);background:rgba(184,134,11,0.08);cursor:pointer;font-size:32px;transition:all .2s}
-.voice-btn:hover{background:rgba(184,134,11,0.15)}
-.voice-btn.playing{animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(184,134,11,.4)}50%{box-shadow:0 0 0 16px rgba(184,134,11,0)}}
-.voice-status{font-size:12px;color:var(--text-muted);margin-top:8px}
-.voice-question{margin-top:12px;font-size:13px;color:var(--text-body)}
-.voice-options{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.voice-opt{padding:10px;border:1px solid var(--border-dim);border-radius:6px;cursor:pointer;background:#F5EDE0;font-size:12px;text-align:center;transition:all .2s}
-.voice-opt:hover{border-color:var(--blue)}
-.voice-opt.correct{border-color:var(--green)!important;background:rgba(91,140,90,0.08)!important}
-.voice-opt.wrong{border-color:var(--red)!important;animation:shake .5s}
-/* compare */
-.compare-container{position:relative;width:100%;height:220px;border-radius:8px;overflow:hidden;margin:10px 0}
-.compare-old,.compare-new{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px}
-.compare-old{background:#EDE1D0;z-index:1;color:var(--text-body)}
-.compare-new{background:#E8F0E8;clip-path:inset(0 50% 0 0);z-index:2;color:var(--text-body)}
-.compare-label{font-size:11px;color:var(--text-muted);margin-top:6px}
-.compare-handle{
-  position:absolute;top:0;bottom:0;width:4px;background:var(--blue);
-  left:50%;transform:translateX(-50%);z-index:3;cursor:ew-resize;
+.lightbox.show{display:flex}
+.lightbox img{max-width:90vw;max-height:80vh;border:2px solid #D4AF37;border-radius:6px;box-shadow:0 12px 50px rgba(0,0,0,.6)}
+.lightbox .lb-tip{position:absolute;bottom:20px;color:#D4AF37;font-size:12px;letter-spacing:1px;opacity:.7;pointer-events:none}
+.side-panel.open{display:block;animation:slideIn .3s ease}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.sp-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;color:#fff;margin-right:4px;vertical-align:middle}
+.sp-id{font-size:11px;color:var(--text-faint);letter-spacing:1px}
+.sp-name{font-size:19px;font-weight:700;margin:6px 0 4px;color:var(--text-main)}
+.sp-intro{font-size:12.5px;line-height:1.7;color:var(--text-main);margin-bottom:8px}
+.sp-block{font-size:12px;background:#F3E7C8;border-radius:8px;padding:8px 10px;margin-bottom:6px;line-height:1.7}
+.sp-block .sb-t{font-size:10px;color:var(--text-faint);letter-spacing:1px;margin-bottom:2px}
+.sp-block .sb-t b{color:var(--gold)}
+.sp-reward{font-size:12px;color:var(--red);font-weight:700;margin:6px 0}
+.sp-done{font-size:12px;color:var(--green);font-weight:700;margin-top:4px}
+.sp-btn{
+  width:100%;margin-top:10px;padding:10px;border:none;border-radius:8px;cursor:pointer;
+  font-size:14px;font-weight:700;letter-spacing:2px;color:#fff;
+  background:linear-gradient(135deg,var(--gold),#a8862f);box-shadow:0 3px 10px rgba(184,134,11,.4);
+  transition:all .25s ease;
 }
-.compare-handle::after{content:"◀▶";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--blue);color:#fff;font-size:12px;padding:6px 4px;border-radius:4px;white-space:nowrap}
-/* modal button */
-.modal-btn{
-  display:block;width:100%;margin-top:14px;padding:12px;border-radius:8px;border:none;
-  font-size:14px;font-weight:600;cursor:pointer;transition:all .3s;
-  background:var(--border-dim);color:var(--text-muted);
+.sp-btn:active{transform:scale(.97)}
+.sp-btn.done{background:var(--green);cursor:default}
+/* ---------------- 理论按钮 & 理论弹窗 ---------------- */
+.theory-btn{
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#fff;
+  padding:7px 14px;border:none;border-radius:20px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--green),#4a7a4a);box-shadow:0 3px 10px rgba(91,140,90,.35);
 }
-.modal-btn.active{background:var(--blue);color:#fff}
-.modal-btn.active:hover{background:var(--blue-hover)}
-.modal-btn.done{background:var(--green);color:#fff;pointer-events:none}
-/* success overlay */
-.success-overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.9);
-  z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;
+.theory-btn:active{transform:scale(.97)}
+.mech-btn{
+  font-family:inherit;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;
+  padding:8px 22px;border-radius:20px;color:#fff;border:none;
+  background:linear-gradient(135deg,var(--green),#4a7a4a);box-shadow:0 3px 10px rgba(91,140,90,.35);
 }
-.success-icon{font-size:64px;animation:bounceIn .6s ease}
-@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
-.success-title{font-size:24px;color:var(--green);font-weight:700;margin-top:12px}
-.success-reward{font-size:14px;color:var(--text-body);margin-top:8px}
-/* archive button */
+.mech-btn:active{transform:scale(.97)}
+.tl-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.tl-card{
+  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:10px;
+  padding:10px 12px;cursor:pointer;transition:all .2s;
+}
+.tl-card:hover{border-color:var(--gold);transform:translateY(-1px);box-shadow:var(--shadow)}
+.tl-card .tc-no{font-size:10px;color:var(--text-faint);letter-spacing:1px}
+.tl-card .tc-title{font-size:14px;font-weight:700;color:var(--accent);margin:2px 0}
+.tl-card .tc-content{font-size:11.5px;line-height:1.7;color:var(--text-muted)}
+.tl-mech{text-align:center;margin-top:14px}
+/* ---------------- 底部按钮 ---------------- */
+.footer{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 12px;background:var(--card-bg);border-top:2px solid var(--border-dim);
+}
 .archive-btn{
-  position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;
-  background:var(--blue);border:2px solid var(--blue-hover);cursor:pointer;
-  font-size:28px;color:#fff;z-index:500;box-shadow:0 4px 16px rgba(184,134,11,.3);
-  display:flex;align-items:center;justify-content:center;transition:all .3s;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#fff;
+  padding:7px 16px;border:none;border-radius:20px;
+  background:linear-gradient(135deg,var(--red),#a52a2a);box-shadow:0 3px 10px rgba(139,0,0,.3);
 }
-.archive-btn:hover{background:var(--blue-hover);transform:scale(1.08)}
-.archive-btn .badge{
-  position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;
-  font-size:10px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;
+.progress-wrap{flex:1;display:flex;align-items:center;gap:8px;max-width:340px}
+.progress-text{font-size:12px;color:var(--text-muted);white-space:nowrap}
+.progress-text b{color:var(--gold);font-size:14px}
+.progress-bar{flex:1;height:8px;border-radius:4px;background:#E8DCBE;overflow:hidden}
+.progress-bar-inner{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--gold-light));transition:width .5s ease}
+.archive-badge{
+  position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:9px;
+  background:var(--red);color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;
+  padding:0 4px;font-weight:700;
 }
-/* archive modal */
+.archive-btn-wrap{position:relative;flex:0 0 auto}
+/* ---------------- 游戏弹窗 ---------------- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:2000;background:rgba(44,34,20,.6);
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+.modal-overlay.show{display:flex}
+.modal{
+  width:min(380px,94vw);max-height:86vh;overflow-y:auto;
+  background:var(--card-bg);border:1px solid var(--border-dim);border-radius:12px;
+  padding:16px;box-shadow:0 10px 40px rgba(0,0,0,.4);
+}
+.modal-title{font-size:17px;font-weight:700;text-align:center;margin-bottom:10px;color:var(--text-main)}
+.modal-btn{
+  width:100%;margin-top:12px;padding:10px;border:none;border-radius:8px;cursor:pointer;
+  font-size:14px;font-weight:700;letter-spacing:2px;color:#fff;
+  background:#C9C2AE;transition:all .25s;
+}
+.modal-btn.active{background:linear-gradient(135deg,var(--gold),#a8862f);box-shadow:0 3px 10px rgba(184,134,11,.4)}
+/* 拼图 */
+.puzzle-board{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:min(300px,90%);margin:0 auto}
+.puzzle-piece{
+  aspect-ratio:1.2;display:flex;align-items:center;justify-content:center;
+  font-size:40px;border:1px dashed rgba(184,134,11,.4);border-radius:8px;
+  background:linear-gradient(135deg,#F3E7C8,#EFE0BE);cursor:grab;user-select:none;
+  transition:all .2s;
+}
+.puzzle-piece.selected{transform:scale(1.06);border:2px solid var(--gold);box-shadow:0 4px 12px rgba(184,134,11,.4)}
+.puzzle-piece.placed{background:linear-gradient(135deg,rgba(91,140,90,.25),#EFE0BE);border-style:solid;border-color:var(--green);cursor:default}
+/* 排序 */
+.sort-list{display:flex;flex-direction:column;gap:6px}
+.sort-item{
+  padding:9px 11px;border:1px solid var(--border-dim);border-radius:8px;cursor:pointer;
+  background:#F6EBD2;transition:all .2s;
+}
+.sort-item .sort-year{font-size:11px;color:var(--text-faint);margin-bottom:2px}
+.sort-item .sort-desc{font-size:12px;line-height:1.5}
+.sort-item.selected{border-color:var(--gold);background:rgba(184,134,11,.15)}
+.sort-item.correct{border-color:var(--green);background:rgba(91,140,90,.15)}
+.sort-item.wrong{border-color:var(--red);background:rgba(139,0,0,.1)}
+.sort-pick-order{font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;min-height:18px}
+/* 语音 */
+.voice-player{display:flex;align-items:center;justify-content:center;gap:12px;margin:10px 0}
+.voice-btn{
+  width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);cursor:pointer;
+  font-size:24px;background:linear-gradient(135deg,#F6EBD2,#EFE0BE);transition:all .2s;
+}
+.voice-btn.playing{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(184,134,11,.5)}50%{box-shadow:0 0 0 12px rgba(184,134,11,0)}}
+.voice-status{font-size:12px;color:var(--text-muted)}
+.voice-question{font-size:14px;font-weight:700;margin:10px 0 8px;line-height:1.6}
+.voice-options{display:flex;flex-direction:column;gap:6px}
+.voice-opt{
+  padding:9px 11px;border:1px solid var(--border-dim);border-radius:8px;cursor:pointer;
+  background:#F6EBD2;font-size:12.5px;line-height:1.5;transition:all .2s;
+}
+.voice-opt.correct{border-color:var(--green);background:rgba(91,140,90,.2)}
+.voice-opt.wrong{border-color:var(--red);background:rgba(139,0,0,.1)}
+/* 对比 */
+.compare-container{
+  position:relative;width:min(320px,100%);height:190px;margin:10px auto;
+  border-radius:10px;overflow:hidden;border:1px solid var(--border-dim);
+}
+.compare-old,.compare-new{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:12px;color:var(--text-muted);gap:6px;background:#F1E6CA;
+}
+.compare-old{background:linear-gradient(135deg,#EDE0C2,#E4D3AC)}
+.compare-new{background:linear-gradient(135deg,#DCE8D2,#CDE0C2);clip-path:inset(0 100% 0 0)}
+.compare-handle{
+  position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--gold);cursor:ew-resize;
+}
+.compare-handle::after{
+  content:'⇔';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:26px;height:26px;border-radius:50%;background:#fff;color:var(--gold);
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+/* ---------------- 成功动画 ---------------- */
+.success-overlay{
+  position:fixed;inset:0;z-index:3000;background:rgba(44,34,20,.7);
+  display:flex;align-items:center;justify-content:center;animation:fadeIn .3s;
+}
+.success-card{
+  text-align:center;background:var(--card-bg);border:2px solid var(--gold);
+  border-radius:14px;padding:26px 34px;box-shadow:0 12px 50px rgba(0,0,0,.5);
+  animation:successPop .5s cubic-bezier(.2,1.6,.4,1);
+}
+.success-card .sc-icon{font-size:52px;margin-bottom:8px}
+.success-card .sc-title{font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px;margin-bottom:6px}
+.success-card .sc-reward{font-size:14px;color:var(--text-main);line-height:1.8}
+.success-card .sc-btn{
+  margin-top:16px;padding:9px 30px;border:none;border-radius:20px;cursor:pointer;
+  font-size:14px;font-weight:700;color:#fff;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--gold),#a8862f);
+}
+@keyframes successPop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* ---------------- 档案 ---------------- */
 .archive-overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(250,240,230,.97);
-  z-index:1500;overflow-y:auto;padding:20px 16px;
+  position:fixed;inset:0;z-index:2500;background:rgba(44,34,20,.75);
+  overflow-y:auto;padding:20px 14px;
 }
-.archive-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.archive-header h3{font-size:20px;color:var(--text-main)}
-.archive-close{background:none;border:none;color:var(--text-muted);font-size:28px;cursor:pointer}
-.archive-progress{margin-bottom:16px}
-.archive-route-progress{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--text-muted)}
-.archive-route-progress .rp-name{min-width:100px;font-weight:600}
-.archive-route-progress .rp-bar{flex:1;height:6px;background:var(--border-dim);border-radius:3px;overflow:hidden}
-.archive-route-progress .rp-bar-inner{height:100%;border-radius:3px;transition:width .5s}
-.archive-route-progress .rp-num{min-width:36px;text-align:right}
-.archive-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.archive-box{
+  max-width:860px;margin:0 auto;background:var(--card-bg);border-radius:14px;
+  padding:18px;box-shadow:0 12px 50px rgba(0,0,0,.5);
+}
+.archive-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.archive-header h3{font-size:17px;letter-spacing:2px;color:var(--text-main)}
+.archive-close{
+  background:none;border:1px solid var(--border-dim);border-radius:50%;
+  width:28px;height:28px;cursor:pointer;font-size:13px;color:var(--text-muted);
+}
+.archive-layer-title{font-size:14px;font-weight:700;color:var(--accent);margin:14px 0 8px;letter-spacing:1px}
+.archive-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:8px}
 .archive-card{
-  aspect-ratio:3/4;border-radius:8px;border:1px solid var(--border-dim);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:6px;transition:all .3s;background:var(--card-bg);
+  border-radius:8px;padding:9px 6px;text-align:center;font-size:11px;
+  transition:all .2s;cursor:default;
 }
-.archive-card.unlocked{border-color:var(--green);background:rgba(91,140,90,0.08)}
-.archive-card.locked{border-color:var(--border-dim);background:#F5EDE0;opacity:.7}
-.archive-card .arc-id{font-size:10px;color:var(--text-muted);margin-bottom:2px}
-.archive-card .arc-name{font-size:11px;color:var(--text-main);font-weight:600;text-align:center}
-.archive-card .arc-icon{font-size:28px;margin-bottom:4px}
-/* shake */
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
-/* theory section */
-.theory-section{
-  margin:0 16px 16px;padding:14px;border-top:1px solid var(--border-dim);
-  position:relative;
+.archive-card.unlocked{
+  background:linear-gradient(135deg,rgba(184,134,11,.18),rgba(212,175,55,.1));
+  border:1px solid rgba(184,134,11,.45);color:var(--text-main);
 }
-.theory-title{font-size:14px;font-weight:600;color:var(--text-main);margin-bottom:12px}
-/* theory circle buttons */
-.theory-circles{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-start}
-.theory-circle-btn{
-  width:56px;height:56px;border-radius:50%;border:2px solid var(--border);
-  background:var(--card-bg);cursor:pointer;transition:all .3s ease;
+.archive-card.locked{
+  background:rgba(232,220,190,.5);border:1px dashed var(--border-dim);color:var(--text-faint);
+}
+.arc-icon{font-size:20px;margin-bottom:3px}
+.arc-id{font-size:9px;color:var(--text-faint);letter-spacing:.5px}
+.arc-name{font-weight:700;margin-top:2px;line-height:1.3}
+/* 复合成就 */
+.comp-title{font-size:14px;font-weight:700;color:var(--red);margin:18px 0 8px;letter-spacing:1px}
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.comp-card{
+  border-radius:10px;padding:10px 12px;font-size:12px;transition:all .2s;
+}
+.comp-card.unlocked{
+  background:linear-gradient(135deg,rgba(139,0,0,.14),rgba(184,134,11,.1));
+  border:1px solid rgba(139,0,0,.4);
+}
+.comp-card.locked{background:rgba(232,220,190,.5);border:1px dashed var(--border-dim);color:var(--text-faint)}
+.comp-card .cc-icon{font-size:20px;margin-bottom:3px}
+.comp-card .cc-name{font-weight:700;margin-bottom:2px}
+.comp-card .cc-desc{font-size:10.5px;line-height:1.5;color:var(--text-muted)}
+/* ---------------- 玩法弹窗 ---------------- */
+.mech-modal{width:min(430px,94vw)}
+.mech-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+.mech-table th,.mech-table td{border:1px solid var(--border-dim);padding:7px 6px;text-align:center;line-height:1.5}
+.mech-table th{background:#F3E7C8;color:var(--accent);font-size:11.5px}
+.mech-table td:first-child{font-weight:700;color:var(--gold);background:#F9F1DC;white-space:nowrap}
+.mech-table td{color:var(--text-main)}
+/* ---------------- 理论弹窗 ---------------- */
+.tp-overlay{
+  position:fixed;inset:0;z-index:2600;background:rgba(44,34,20,.7);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.tp-overlay.show{display:flex}
+.tp-card{
+  max-width:min(520px,94vw);max-height:80vh;overflow-y:auto;background:var(--card-bg);
+  border:1px solid var(--border-dim);border-radius:14px;padding:22px 24px;box-shadow:0 12px 50px rgba(0,0,0,.5);
+}
+.tp-close{
+  float:right;background:none;border:1px solid var(--border-dim);border-radius:50%;
+  width:28px;height:28px;cursor:pointer;font-size:13px;color:var(--text-muted);
+}
+.tp-title{font-size:18px;font-weight:700;color:var(--accent);margin:4px 0 10px;letter-spacing:1px}
+.tp-content{font-size:13px;line-height:1.9;color:var(--text-main)}
+.leaflet-container{font-family:inherit}
+.leaflet-popup-content{font-family:'STKaiti','KaiTi',serif}
+.leaflet-div-icon{background:transparent;border:none}
+.marker-pin{
+  width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
   display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:600;color:var(--text-main);
-  position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer;
 }
-.theory-circle-btn:hover{border-color:var(--blue);transform:scale(1.1);box-shadow:0 4px 16px rgba(184,134,11,0.15)}
-.theory-circle-btn.c1{border-color:var(--orange);color:var(--orange)}
-.theory-circle-btn.c2{border-color:var(--red);color:var(--red)}
-.theory-circle-btn.c3{border-color:var(--green);color:var(--green)}
-.theory-circle-btn.c4{border-color:var(--purple);color:var(--purple)}
-/* theory popup */
-.theory-popup-overlay{
-  position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(60,47,40,.5);
-  z-index:950;display:none;align-items:center;justify-content:center;padding:16px;
-}
-.theory-popup-overlay.show{display:flex}
-.theory-popup{
-  background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
-  width:100%;max-width:400px;padding:20px;
-  box-shadow:0 8px 32px rgba(0,0,0,.12);
-}
-.theory-popup .tp-title{font-size:17px;font-weight:700;color:var(--text-main);margin-bottom:8px}
-.theory-popup .tp-content{font-size:13px;color:var(--text-muted);line-height:1.7}
-.theory-popup .tp-close{
-  float:right;background:none;border:none;color:var(--text-muted);font-size:22px;
-  cursor:pointer;line-height:1;
-}
-.theory-goal{font-size:11px;color:var(--text-faint);margin-top:14px;line-height:1.5}
-/* footer */
-.footer{text-align:center;padding:16px;color:var(--text-faint);font-size:11px;border-top:1px solid var(--border-dim)}
-/* leaflet overrides */
-.leaflet-popup-content-wrapper{background:var(--card-bg);color:var(--text-body);border-radius:8px;border:1px solid var(--border-dim);box-shadow:0 2px 12px rgba(0,0,0,.1)}
-.leaflet-popup-tip{background:var(--card-bg)}
-.leaflet-popup-content{margin:10px 12px;font-size:12px}
-.popup-name{font-weight:600;color:var(--text-main);font-size:13px}
-.popup-id{font-size:10px;color:var(--text-muted)}
-.popup-task{font-size:11px;color:var(--orange);margin-top:4px}
-/* responsive */
-@media (max-width:600px){
-  .header-top h1{font-size:20px;letter-spacing:3px}
-  .header-role{font-size:11px;padding:4px 10px}
-  #map{height:260px}
-  .archive-grid{grid-template-columns:repeat(2,1fr)}
-  .route-tab{padding:6px 10px;min-width:100px}
-  .route-tab .tab-name{font-size:11px}
-  .puzzle-grid{width:180px;height:180px}
+.marker-pin span{transform:rotate(45deg);font-size:14px}
+.marker-pin.done{opacity:.75}
+.marker-pin.done::after{content:'✓';position:absolute;top:-6px;right:-6px;width:15px;height:15px;border-radius:50%;background:var(--green);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;border:1px solid #fff}
+@media(max-width:600px){
+  .header-left h1{font-size:17px;letter-spacing:2px}
+  .header-sub{display:none}
+  #map{top:52px}
+  .side-panel{top:auto;bottom:64px;width:80vw}
+  .layer-dock{left:6px;top:56px;bottom:56px}
+  .dock-layer-cards{width:118px;gap:8px}
+  .route-dock{left:132px;top:56px}
+  .dock-route-cards{width:172px;gap:8px}
+  .route-panel{right:6px;top:56px;width:80vw}
+  .layer-card{min-height:90px;height:90px;padding:9px 8px}
+  .layer-card .lc-name{font-size:14px}
+  .layer-card .lc-emoji{font-size:20px}
+  .layer-card .lc-ident{font-size:11px}
+  .layer-card .lc-prog{font-size:11px}
+  .route-card{min-height:90px;height:90px;padding:8px 10px}
+  .route-card .rc-name{font-size:13px}
+  .route-card .rc-emoji{font-size:16px}
+  .route-card .rc-ident{font-size:11px}
+  .point-label{font-size:12.5px;padding:2px 7px;border-width:1.5px}
 }
 </style>
 </head>
 <body>
 
-<!-- ========== HEADER ========== -->
 <div class="header">
-  <div class="header-top">
-    <h1>江城往事</h1>
-    <span class="header-role">🔧 武汉时间修复师</span>
+  <div class="header-left">
+    <h1>江城游记</h1>
+    <span class="header-sub">可玩城市 · 武汉多层交互地图</span>
   </div>
-  <div class="header-progress">
-    <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
-    <span class="progress-text">已修复 <span class="done" id="progressDone">0</span>/25</span>
+  <div class="header-role" id="headerRole"><b>选择图层</b></div>
+</div>
+
+<div class="layer-dock" id="layerDock">
+  <div class="dock-layer-cards" id="layerCards"></div>
+</div>
+<div class="route-dock" id="routeDock" style="display:none">
+  <div class="dock-route-cards" id="routeCards"></div>
+</div>
+
+<div id="map"></div>
+
+<div class="map-hint" id="mapHint">点击地图上的图钉，开启修复之旅</div>
+
+<div class="route-panel" id="routePanel">
+  <div class="rp-collapse" id="routePanelToggle" onclick="toggleRoutePanel()">📍 路线点位 ▾</div>
+  <div id="routePanelBody"></div>
+</div>
+
+<div class="side-panel" id="sidePanel"></div>
+
+<div class="footer">
+  <div class="archive-btn-wrap">
+    <button class="archive-btn" onclick="openArchive()">📚 城市档案</button>
+    <span class="archive-badge" id="archiveBadge" style="display:none">0</span>
   </div>
-</div>
-
-<!-- ========== ROUTE SELECTOR ========== -->
-<div class="route-selector" id="routeSelector"></div>
-
-<!-- ========== IDENTITY CARD ========== -->
-<div class="identity-card" id="identityCard">
-  <div class="id-title">当前身份</div>
-  <div class="id-name" id="idName">请选择路线</div>
-  <div class="id-desc" id="idDesc">点击上方路线卡片，选择你的历史身份，开启江城往事探索之旅。</div>
-  <span class="id-reward" id="idReward" style="background:rgba(184,134,11,0.1);color:var(--blue-text)">等待选择...</span>
-</div>
-
-<!-- ========== MAP ========== -->
-<div class="map-section"><div id="map"></div></div>
-
-<!-- ========== MAP HINT ========== -->
-<div class="map-hint">📍 点击地图上的图标查看点位详情</div>
-
-<!-- ========== SIDE PANEL OVERLAY ========== -->
-<div class="side-panel-overlay" id="sidePanelOverlay" onclick="closeSidePanel()"></div>
-<div class="side-panel" id="sidePanel">
-  <button class="sp-close" onclick="closeSidePanel()">✕</button>
-  <div id="sidePanelContent"></div>
-</div>
-
-<!-- ========== THEORY ========== -->
-<div class="theory-section">
-  <div class="theory-title">📖 理论框架</div>
-  <div class="theory-circles">
-    <div class="theory-circle-btn c1" onclick="openTheoryPopup(0)" title="可玩城市">可玩<br>城市</div>
-    <div class="theory-circle-btn c2" onclick="openTheoryPopup(1)" title="地图叙事">地图<br>叙事</div>
-    <div class="theory-circle-btn c3" onclick="openTheoryPopup(2)" title="参与式营造">参与<br>营造</div>
-    <div class="theory-circle-btn c4" onclick="openTheoryPopup(3)" title="多层交互">多层<br>交互</div>
+  <div class="progress-wrap">
+    <span class="progress-text">已修复 <b id="progressDone">0</b>/<span id="progressTotal">0</span></span>
+    <div class="progress-bar"><div class="progress-bar-inner" id="progressBar"></div></div>
   </div>
-  <div class="theory-goal">研究目标：通过游戏化设计，提升市民对武汉历史街区的探索欲与归属感，为城市更新提供创新路径。</div>
+  <button class="theory-btn" onclick="openTheoryList()">📜 理论</button>
 </div>
 
-<!-- ========== THEORY POPUP OVERLAY ========== -->
-<div class="theory-popup-overlay" id="theoryPopupOverlay" onclick="closeTheoryPopup()">
-  <div class="theory-popup" id="theoryPopup" onclick="event.stopPropagation()"></div>
-</div>
+<div class="modal-overlay" id="gameOverlay"><div class="modal" id="gameModal"></div></div>
+<div class="tp-overlay" id="theoryPopupOverlay"><div class="tp-card" id="theoryPopup"></div></div>
+<div class="tp-overlay" id="theoryListOverlay"><div class="tp-card" id="theoryListPopup"></div></div>
+<div class="tp-overlay" id="mechPopupOverlay" style="display:none"><div class="tp-card mech-modal" id="mechPopup"></div></div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()"><img src="" alt=""><span class="lb-tip">点击任意处关闭 · ESC 退出</span></div>
 
-<!-- ========== FOOTER ========== -->
-<div class="footer">可玩城市 · 地图叙事 · 参与式营造<br>武汉多层交互游戏化设计研究</div>
-
-<!-- ========== ARCHIVE BUTTON ========== -->
-<button class="archive-btn" id="archiveBtn" onclick="openArchive()">📚<span class="badge" id="archiveBadge" style="display:none">0</span></button>
-
-<!-- ========== SCRIPTS ========== -->
 <script>
-'use strict';
-
 /* ============================================================
-   DATA: 4 ROUTES × 25 POINTS
+   DATA: 4 LAYERS (L/Q/M/S) × 16 ROUTES
    ============================================================ */
-const ROUTES = [
-  {
-    id:"H1",name:"开埠风云",theme:"近代商都·汉口开埠",
-    identity:"租界侦探",
-    identity_desc:"你是1920年代的租界侦探，调查汉口租界的秘密。每修复一个点位，获得一条「线索」，集齐线索解锁「租界秘密档案」。",
-    reward:"称号「租界侦探」",
-    color:"#f0883e",emoji:"🔍",
-    points:[
-      {id:"J-01",name:"江汉关",year:"1924年",type:"建筑",play:"拼图修复",task:"钟楼密语",desc:"老照片碎成4块，拖动拼图还原江汉关钟楼全貌",reward:"线索「海关钟声」",lat:30.576075,lng:114.297308},
-      {id:"J-02",name:"黎黄陂路",year:"1900年",type:"生活",play:"对比修复",task:"街头博物馆",desc:"对比黎黄陂路今昔照片，滑动查看百年变迁",reward:"线索「使馆风云」",lat:30.586444,lng:114.302226},
-      {id:"J-03",name:"八七会议会址",year:"1927年",type:"事件",play:"排序修复",task:"紧急会议",desc:"将八七会议相关3张历史照片按时间顺序排列",reward:"线索「革命转折」",lat:30.586637,lng:114.299904},
-      {id:"J-04",name:"巴公房子",year:"1910年",type:"建筑",play:"拼图修复",task:"俄式洋房",desc:"拼合巴公房子老照片，还原俄式古典建筑风貌",reward:"线索「俄国茶商」",lat:30.586141,lng:114.299831},
-      {id:"J-05",name:"平和打包厂",year:"1918年",type:"建筑",play:"拼图修复",task:"打包厂遗稿",desc:"拼合老汉口工业建筑照片，还原打包厂历史",reward:"线索「工业记忆」",lat:30.582585,lng:114.297772},
-      {id:"J-06",name:"咸安坊",year:"1915年",type:"生活",play:"对比修复",task:"里份暗号",desc:"对比咸安坊老照片与现状，感受里份文化变迁",reward:"线索「里份密匙」",lat:30.582745,lng:114.295924},
-      {id:"J-07",name:"大智门火车站旧址",year:"1903年",type:"建筑",play:"拼图修复",task:"最后一班列车",desc:"拼合大智门火车站老照片，还原京汉铁路起点",reward:"线索「铁路先锋」",lat:30.594098,lng:114.297131}
-    ]
-  },
-  {
-    id:"H2",name:"首义之路",theme:"辛亥首义·共和曙光",
-    identity:"革命通讯员",
-    identity_desc:"你是1911年的革命通讯员，传递起义情报。每修复一个点位，传递一段「情报」，情报需要按正确顺序排列（时间线）。",
-    reward:"勋章「首义先锋」",
-    color:"#da3633",emoji:"✉️",
-    points:[
-      {id:"J-08",name:"起义门",year:"1911年",type:"事件",play:"排序修复",task:"起义门号角",desc:"将武昌起义3个关键时刻按时间排序",reward:"情报「第一枪」",lat:30.525627,lng:114.307285},
-      {id:"J-09",name:"红楼",year:"1911年",type:"事件",play:"排序修复",task:"都督府密令",desc:"排列辛亥革命从起义到建都督府的时间线",reward:"情报「共和曙光」",lat:30.539175,lng:114.305584},
-      {id:"J-10",name:"黄鹤楼",year:"223年",type:"建筑",play:"拼图修复",task:"登楼远眺",desc:"拼合历代黄鹤楼画作，感受「天下江山第一楼」",reward:"情报「江山胜迹」",lat:30.544649,lng:114.302467},
-      {id:"J-11",name:"得胜桥",year:"明清",type:"生活",play:"对比修复",task:"得胜暗号",desc:"对比得胜桥老街今昔，寻找隐藏的革命标语",reward:"情报「地下通道」",lat:30.549234,lng:114.30345},
-      {id:"J-12",name:"中共五大会址",year:"1927年",type:"事件",play:"排序修复",task:"五大密档",desc:"排列中共早期革命历史事件时间线",reward:"情报「红色记忆」",lat:30.550933,lng:114.298459},
-      {id:"J-13",name:"农讲所",year:"1927年",type:"人物",play:"语音解谜",task:"农讲所课堂",desc:"聆听毛泽东在农讲所的故事，回答历史问题",reward:"情报「农民运动」",lat:30.55369,lng:114.300394}
-    ]
-  },
-  {
-    id:"H3",name:"汉阳寻根",theme:"知音故里·汉阳记忆",
-    identity:"工业考古学家",
-    identity_desc:"你是工业考古学家，挖掘汉阳工业遗产。解锁点位收集「工业遗物」，遗物可以组合成「汉阳工业图谱」。",
-    reward:"徽章「工业考古学家」",
-    color:"#3fb950",emoji:"⚒️",
-    points:[
-      {id:"J-14",name:"晴川阁",year:"1547年",type:"建筑",play:"拼图修复",task:"晴川对诗",desc:"拼合晴川阁古画，还原「晴川历历汉阳树」意境",reward:"遗物「禹王碑刻」",lat:30.555551,lng:114.284786},
-      {id:"J-15",name:"龟山电视塔",year:"1986年",type:"建筑",play:"对比修复",task:"龟山守望",desc:"对比龟山电视塔建设前后，见证城市天际线变迁",reward:"遗物「塔顶瞭望」",lat:30.555545,lng:114.280582},
-      {id:"J-16",name:"汉阳造",year:"1890年",type:"建筑",play:"拼图修复",task:"兵工厂探秘",desc:"拼合汉阳兵工厂老照片，还原「东方克虏伯」",reward:"遗物「步枪图纸」",lat:30.556515,lng:114.268372},
-      {id:"J-17",name:"古琴台",year:"北宋",type:"人物",play:"语音解谜",task:"高山流水",desc:"聆听伯牙子期知音故事，回答知音文化问题",reward:"遗物「知音琴谱」",lat:30.554339,lng:114.26379},
-      {id:"J-18",name:"归元寺",year:"1658年",type:"建筑",play:"拼图修复",task:"罗汉秘境",desc:"拼合归元寺罗汉堂老照片，还原佛教艺术",reward:"遗物「罗汉图谱」",lat:30.545268,lng:114.259018},
-      {id:"J-19",name:"汉阳树",year:"明代",type:"生活",play:"对比修复",task:"古树寻踪",desc:"对比汉阳树500年变迁，感受时光流逝",reward:"遗物「年轮记忆」",lat:30.547917,lng:114.27084}
-    ]
-  },
-  {
-    id:"H4",name:"古城新韵",theme:"一桥飞架·三镇连心",
-    identity:"古城修复师",
-    identity_desc:"你是古城修复师，修复武昌古城的文化记忆。解锁点位收集「文化碎片」，碎片拼成「武昌古城文化地图」。",
-    reward:"称号「古城守护者」",
-    color:"#a371f7",emoji:"🖌️",
-    points:[
-      {id:"J-20",name:"长江大桥",year:"1957年",type:"建筑",play:"拼图修复",task:"一桥飞架",desc:"拼合武汉长江大桥建设老照片，还原「万里长江第一桥」",reward:"碎片「钢铁长虹」",lat:30.547225,lng:114.292874},
-      {id:"J-21",name:"昙华林",year:"明清",type:"生活",play:"对比修复",task:"文艺漫步",desc:"对比昙华林老街改造前后，感受古城新生",reward:"碎片「文艺新生」",lat:30.55194,lng:114.308791},
-      {id:"J-22",name:"翟雅阁",year:"1921年",type:"建筑",play:"拼图修复",task:"建筑探秘",desc:"拼合翟雅阁老照片，还原中西合璧建筑风格",reward:"碎片「中西合璧」",lat:30.550546,lng:114.314708},
-      {id:"J-23",name:"粮道街",year:"明清",type:"生活",play:"对比修复",task:"过早文化",desc:"对比粮道街早餐文化今昔，感受武汉烟火气",reward:"碎片「烟火记忆」",lat:30.547408,lng:114.310451},
-      {id:"J-24",name:"宝通寺",year:"南朝",type:"建筑",play:"拼图修复",task:"洪山古刹",desc:"拼合宝通寺与洪山宝塔老照片，还原千年古刹",reward:"碎片「佛塔禅音」",lat:30.530349,lng:114.341206},
-      {id:"J-25",name:"武汉大学",year:"1893年",type:"建筑",play:"对比修复",task:"珞珈寻樱",desc:"对比武大校园历史照片与现状，感受学府变迁",reward:"碎片「学府春秋」",lat:30.536243,lng:114.364514}
-    ]
-  }
+var ALL_LAYERS={
+L:{name:'历史叙事层',desc:'历史街区空间 · 实景剧本杀',identity:'城市探员',emoji:'🏛️',color:'#8b6914',routes:[
+{id:'L1',name:'汉口沿江建筑线',theme:'江汉关—沿江金融群',emoji:'🏛️',color:'#a3712f',finalReward:'「东方芝加哥通」',
+ points:[
+{id:'L1-01',name:'江汉关博物馆/钟楼',type:'建筑',game:'voice',task:'钟声密码',intro:'1924年建成的地标建筑，古典主义风格。整点时大钟楼会敲响钟声，站在露台可以俯瞰长江和汉口江滩的绝美夜景。',desc:'聆听整点钟声，在APP中输入钟声次数解锁「东方芝加哥」章节剧情；露台夜景触发AR历史影像叠加。',reward:'解锁「东方芝加哥」章节 + 徽章「钟声聆听者」',lat:30.576075,lng:114.297308,qa:{q:'江汉关大楼建成于哪一年，见证了汉口怎样的地位？',o:['1924年，东方芝加哥','1900年，东方小巴黎','1911年，东方纽约'],a:0}},
+{id:'L1-02',name:'青岛路历史街区',type:'建筑',game:'compare',task:'华尔街巡礼',intro:'汉口开埠后最早的银行街区之一，欧式洋行与银行建筑云集，被称为「汉口华尔街」。',desc:'对比青岛路百年银行建筑今昔，寻找隐藏在建筑墙面上的英文商号痕迹。',reward:'徽章「金融大亨」',lat:30.582282,lng:114.297516},
+{id:'L1-03',name:'沿江金融建筑群',type:'建筑',game:'puzzle',task:'银行拼图',intro:'沿江大道上的近代金融建筑群，花旗银行、汇丰银行旧址见证了武汉百年金融史。',desc:'拼合沿江金融建筑群老照片，还原近代银行大楼风貌。',reward:'徽章「金融大亨」',lat:30.581181,lng:114.299485},
+{id:'L1-04',name:'武汉关码头/轮渡',type:'生活',game:'sort',task:'百年渡口',intro:'百年轮渡码头，武汉三镇往来的重要渡口，「坐轮渡看江景」是老武汉的生活方式。',desc:'将武汉轮渡发展的三个阶段按时间排序。',reward:'徽章「渡江人」',lat:30.575127,lng:114.298180,events:[{year:'1930年代',desc:'轮渡航线开辟，汉口—武昌客运繁忙'},{year:'1950年代',desc:'武汉市轮渡公司成立，成为过江主力交通'},{year:'2000年后',desc:'过江大桥地铁增多，轮渡转型观光休闲打卡点'}]},
+{id:'L1-05',name:'汉口江滩',type:'自然',game:'compare',task:'江滩岁月',intro:'亚洲最大江滩之一，与沿江大道老建筑群隔江相望，是市民亲水休闲的城市客厅。',desc:'对比汉口江滩改造前后，感受从货运码头到滨江公园的巨变。',reward:'徽章「江滩守望者」',lat:30.610162,lng:114.319404}
+]},
+{id:'L2',name:'汉口老里份建筑线',theme:'黎黄陂路—咸安坊',emoji:'🏘️',color:'#8b6914',finalReward:'「里份生活家」',
+ points:[
+{id:'L2-01',name:'黎黄陂路',type:'生活',game:'compare',task:'街头博物馆',intro:'汉口「街头博物馆」，集中保留大量俄、法、英租界时期的欧式建筑，网红咖啡馆云集。',desc:'对比黎黄陂路今昔照片，滑动查看百年变迁。',reward:'徽章「街头艺术家」',lat:30.586446,lng:114.301889},
+{id:'L2-02',name:'巴公房子',type:'建筑',game:'compare',task:'武康大楼副本',intro:'1901年建的俄式红砖公寓，三角形转角造型极具辨识度，被称为「武汉版武康大楼」，是拍摄民国复古大片的绝佳机位。',desc:'三角转角处触发「最佳机位」AR框，拍摄民国复古大片解锁「穿越者」皮肤。',reward:'解锁「穿越者」皮肤',lat:30.586141,lng:114.299831},
+{id:'L2-03',name:'咸安坊',type:'生活',game:'puzzle',task:'里份暗号',intro:'汉口保存最完好的里份之一，红砖石库门建筑见证汉口市民生活的百年变迁。',desc:'拼合咸安坊老照片，还原里份生活的烟火日常。',reward:'徽章「里份居民」',lat:30.582745,lng:114.295924},
+{id:'L2-04',name:'同兴里/泰兴里',type:'生活',game:'voice',task:'里份故事',intro:'汉口经典里份，民国时期的中西合璧住宅区，如今开满文艺小店。',desc:'聆听同兴里的百年故事，回答里份文化问题。',reward:'徽章「里份居民」',lat:30.588574,lng:114.300729,qa:{q:'同兴里等武汉「里份」建筑最典型的特征是什么？',o:['独栋欧式别墅','中式院落与西式楼房结合的联排住宅','高层公寓楼'],a:1}},
+{id:'L2-05',name:'延庆里',type:'生活',game:'sort',task:'里份变迁',intro:'老汉口里份，青砖黛瓦，保留着最地道的武汉市民生活记忆。',desc:'将汉口里份从形成到保护性改造的阶段按时间排序。',reward:'徽章「里份守望者」',lat:30.596200,lng:114.305045,events:[{year:'1861年',desc:'汉口开埠，里份建筑开始出现'},{year:'1920-1930年代',desc:'里份建筑进入全盛时期，成片住宅区建成'},{year:'2000年后',desc:'老里份进行保护性修缮，成为文化街区'}]}
+]},
+{id:'L3',name:'汉口红色记忆线',theme:'八七—长江书店',emoji:'📜',color:'#b91c1c',finalReward:'「红色记忆人」',
+ points:[
+{id:'L3-01',name:'八七会议旧址',type:'事件',game:'sort',task:'紧急会议',intro:'1927年八七会议在此秘密召开，是中国共产党历史上一个重要的转折点。',desc:'将八七会议相关3个历史时刻按时间顺序排列。',reward:'徽章「革命文人」',lat:30.586637,lng:114.299904,events:[{year:'1927年8月7日',desc:'八七会议在汉口召开，确立土地革命和武装斗争总方针'},{year:'1927年9月',desc:'秋收起义爆发'},{year:'1927年10月',desc:'创建井冈山革命根据地'}]},
+{id:'L3-02',name:'长江书店',type:'事件',game:'voice',task:'红色书店',intro:'大革命时期中共在武汉创办的书店，是传播革命思想的「红色书店」。',desc:'聆听长江书店的故事，回答关于革命出版文化的问题。',reward:'徽章「革命文人」',lat:30.575366,lng:114.284753,qa:{q:'大革命时期长江书店主要传播什么？',o:['革命书刊与马克思主义思想','西方小说','科技教材'],a:0}},
+{id:'L3-03',name:'宋庆龄故居',type:'事件',game:'compare',task:'先生故居',intro:'1927年宋庆龄在汉期间居所，一栋欧式小楼，见证了大革命时期的武汉风云。',desc:'对比故居建筑今昔，了解宋庆龄在武汉的革命活动。',reward:'徽章「革命见证者」',lat:30.586486,lng:114.302333},
+{id:'L3-04',name:'联保里+永康里',type:'生活',game:'compare',task:'地下交通',intro:'汉口红色文化街区，大革命时期工人运动的聚集地，里份中藏着革命联络点。',desc:'对比里份今昔，寻找隐藏的革命标语与联络痕迹。',reward:'徽章「革命文人」',lat:30.580315,lng:114.289417},
+{id:'L3-05',name:'保元里',type:'生活',game:'puzzle',task:'保元寻迹',intro:'汉口老里份，红色文化资源丰富，街区改造后成为红色记忆展示空间。',desc:'拼合保元里老照片，还原里份中的红色记忆。',reward:'徽章「红色记忆人」',lat:30.583715,lng:114.292351}
+]},
+{id:'L4',name:'汉阳古迹人文线',theme:'晴川阁—归元',emoji:'⛩️',color:'#0f766e',finalReward:'「知音文化使」',
+ points:[
+{id:'L4-01',name:'晴川阁',type:'建筑',game:'puzzle',task:'晴川对诗',intro:'建于明代，与黄鹤楼隔江相望，「晴川历历汉阳树」的诗句让晴川阁名扬天下。',desc:'拼合晴川阁古画，还原「晴川历历汉阳树」意境。',reward:'徽章「晴川雅士」',lat:30.555551,lng:114.284786},
+{id:'L4-02',name:'古琴台',type:'人物',game:'voice',task:'高山流水',intro:'伯牙子期「高山流水遇知音」传说的发源地，中国知音文化的象征。',desc:'聆听伯牙子期知音故事，回答知音文化问题。',reward:'徽章「知音人」',lat:30.554339,lng:114.263790,qa:{q:'「高山流水」中，钟子期从伯牙琴声中听出了什么？',o:['高山和流水','战场和厮杀','田园牧歌'],a:0}},
+{id:'L4-03',name:'龟山公园',type:'建筑',game:'compare',task:'龟山守望',intro:'龟山与蛇山隔江相望，山上古迹众多，电视塔、禹王宫与晴川阁连成汉阳人文轴线。',desc:'对比龟山今昔照片，感受汉阳天际线的百年变迁。',reward:'徽章「知音文化使」',lat:30.555045,lng:114.275707},
+{id:'L4-04',name:'汉阳造',type:'建筑',game:'puzzle',task:'兵工厂探秘',intro:'1890年张之洞创办的汉阳兵工厂旧址，中国近代工业的摇篮，现为文创园区。',desc:'拼合汉阳兵工厂老照片，还原「东方克虏伯」。',reward:'徽章「工业传人」',lat:30.556515,lng:114.268372},
+{id:'L4-05',name:'归元禅寺',type:'建筑',game:'compare',task:'罗汉秘境',intro:'始建于1658年，武汉最著名的古刹，「数罗汉」民俗活动吸引无数香客。',desc:'对比归元寺罗汉堂今昔，感受「数罗汉」民俗文化的传承。',reward:'徽章「禅意行者」',lat:30.545268,lng:114.259018}
+]}
+]},
+Q:{name:'青年策展层',desc:'青年友好潮流空间 · 艺术打卡',identity:'潮流策展人',emoji:'🎨',color:'#7c3aed',routes:[
+{id:'Q1',name:'汉口潮流打卡线',theme:'江汉路—武汉天地',emoji:'🛍️',color:'#7c3aed',finalReward:'「潮流先锋」',
+ points:[
+{id:'Q1-01',name:'江汉路步行街',type:'生活',game:'compare',task:'百年商街',intro:'「天下第一步行街」，百年商业老街，欧式建筑与潮流店铺交织。',desc:'对比江汉路今昔，感受百年商业街的时尚新生。',reward:'徽章「潮流先锋」',lat:30.581672,lng:114.290521},
+{id:'Q1-02',name:'武汉天地',type:'生活',game:'compare',task:'都市客厅',intro:'由老洋房街区改造的时尚商圈，中西合璧的建筑风格与轻奢潮流品牌云集。',desc:'对比武汉天地改造前后，感受老洋房的新生。',reward:'徽章「都会玩家」',lat:30.607643,lng:114.311362},
+{id:'Q1-03',name:'多牛世界',type:'艺术',game:'puzzle',task:'打包厂焕新',intro:'平和打包厂改造的文创园区，工业风建筑中藏着艺术展览和潮流店铺。',desc:'拼合打包厂改造前后画面，感受工业遗产的潮流新生。',reward:'徽章「文创玩家」',lat:30.582529,lng:114.297784},
+{id:'Q1-04',name:'武汉美术馆',type:'艺术',game:'voice',task:'艺术会客厅',intro:'由金城银行旧址改造的美术馆，本身就是一件民国建筑艺术品，展览与打卡兼具。',desc:'聆听武汉美术馆的故事，回答建筑与艺术问题。',reward:'徽章「艺术鉴赏家」',lat:30.583931,lng:114.293000,qa:{q:'武汉美术馆由什么建筑改造而来？',o:['金城银行旧址','江汉关大楼','巴公房子'],a:0}},
+{id:'Q1-05',name:'扬子街',type:'生活',game:'sort',task:'潮流密码',intro:'江汉路旁的文艺小巷，潮牌店、咖啡店、古着店密集，是年轻人的街头聚集地。',desc:'将扬子街从老巷到潮人聚集地的演变按时间排序。',reward:'徽章「潮流先锋」',lat:30.579938,lng:114.293106,events:[{year:'民国时期',desc:'扬子街一带为租界商业街区'},{year:'20世纪末',desc:'转型为服装批发与零售街区'},{year:'2010年代后',desc:'潮牌与咖啡店入驻，成为青年潮流聚集地'}]}
+]},
+{id:'Q2',name:'武昌高校文创线',theme:'武大—楚河汉街',emoji:'🎓',color:'#db2777',finalReward:'「高校图鉴王」',
+ points:[
+{id:'Q2-01',name:'武汉大学',type:'建筑',game:'compare',task:'珞珈寻樱',intro:'依珞珈山而建的「最美大学」，民国建筑群与樱花大道闻名全国。',desc:'对比武大校园百年照片，感受樱花城堡与民国建筑之美。',reward:'徽章「珞珈学子」',lat:30.536243,lng:114.364514},
+{id:'Q2-02',name:'华中科技大学',type:'建筑',game:'puzzle',task:'森林大学',intro:'喻家山下的「森林大学」，银杏大道与青年艺术空间充满活力。',desc:'拼合华科校园画面，感受森林校园的魅力。',reward:'徽章「森林学子」',lat:30.512688,lng:114.418457},
+{id:'Q2-03',name:'湖北省博物馆',type:'建筑',game:'puzzle',task:'镇馆之宝',intro:'荆楚文化宝库，越王勾践剑、曾侯乙编钟等镇馆之宝闻名世界。',desc:'拼合越王勾践剑与编钟图案，解锁荆楚文物图鉴。',reward:'徽章「荆楚文博人」',lat:30.561506,lng:114.365446},
+{id:'Q2-04',name:'楚河汉街',type:'生活',game:'compare',task:'现代上河图',intro:'现代「清明上河图」，依楚河而建的商业步行街，民国建筑风格与现代商业融合。',desc:'对比汉街建设前后，感受「楚河汉街」的诞生。',reward:'徽章「汉街通」',lat:30.557103,lng:114.340697},
+{id:'Q2-05',name:'湖北省科学技术馆',type:'建筑',game:'voice',task:'未来之眼',intro:'光谷东的科技新地标，「天眼」造型充满未来感，是亲子科普打卡胜地。',desc:'聆听科技馆介绍，回答关于科技馆建筑与科普的问题。',reward:'徽章「未来探索者」',lat:30.491083,lng:114.505490,qa:{q:'湖北省科技馆独特的环形外观被市民亲切地称作什么？',o:['天眼','太空舱','水晶球'],a:0}}
+]},
+{id:'Q3',name:'光谷青年活力线',theme:'世界城—创意天地',emoji:'💡',color:'#2563eb',finalReward:'「光谷夜猫子」',
+ points:[
+{id:'Q3-01',name:'世界城光谷',type:'生活',game:'compare',task:'光谷之心',intro:'光谷核心商圈，欧洲风情街与时尚潮流店铺组成年轻人的「宇宙中心」。',desc:'对比光谷步行街建设前后，感受「宇宙中心」的崛起。',reward:'徽章「光谷青年」',lat:30.505578,lng:114.403157},
+{id:'Q3-02',name:'武汉大悦城',type:'生活',game:'puzzle',task:'潮流MALL',intro:'光谷东的潮流MALL，空中跑道与网红美食云集，是年轻人周末打卡地。',desc:'拼合大悦城地标画面，解锁潮流打卡地图。',reward:'徽章「MALL玩家」',lat:30.487398,lng:114.498611},
+{id:'Q3-03',name:'武汉创意天地',type:'艺术',game:'compare',task:'创意孵化',intro:'洪山区的文化创意产业园，工业厂房改造的艺术街区，展览与工作室云集。',desc:'对比创意天地园区建设前后，感受青年艺术孵化基地的诞生。',reward:'徽章「创意孵化官」',lat:30.470526,lng:114.321887},
+{id:'Q3-04',name:'同学广场',type:'生活',game:'voice',task:'青春派对',intro:'大学城旁的青年社交广场，美食、文创、livehouse汇集，是学生们的聚会圣地。',desc:'聆听同学广场的故事，回答大学城青年文化问题。',reward:'徽章「青春玩家」',lat:30.489162,lng:114.397101,qa:{q:'同学广场主要服务哪类人群？',o:['周边高校学生与青年','商务白领','游客团队'],a:0}},
+{id:'Q3-05',name:'合美术馆',type:'艺术',game:'voice',task:'艺术侦探',intro:'创意天地内的当代美术馆，先锋艺术展览与实验艺术活动不断。',desc:'聆听合美术馆当代艺术介绍，回答先锋艺术相关问题。',reward:'徽章「当代艺术人」',lat:30.470326,lng:114.323561,qa:{q:'合美术馆主要展出哪类艺术？',o:['当代先锋艺术','古代文物','自然标本'],a:0}}
+]},
+{id:'Q4',name:'汉口商业mall线',theme:'武商—万象城',emoji:'🏬',color:'#0891b2',finalReward:'「mall达人」',
+ points:[
+{id:'Q4-01',name:'武商MALL',type:'生活',game:'compare',task:'商业龙头',intro:'华中商业「龙头」，武商集团旗下的顶级购物中心，承载武汉人的消费记忆。',desc:'对比武商商圈今昔，感受武汉商业发展史。',reward:'徽章「商业达人」',lat:30.579913,lng:114.271169},
+{id:'Q4-02',name:'恒隆广场',type:'生活',game:'puzzle',task:'城市地标拼图',intro:'汉口核心的国际化购物中心，设计感十足，汇聚全球高端品牌。',desc:'拼合恒隆广场夜景，感受汉口核心商圈的国际范。',reward:'徽章「国际玩家」',lat:30.577843,lng:114.273815},
+{id:'Q4-03',name:'武汉万象城',type:'生活',game:'voice',task:'万象艺术',intro:'建设大道金融街上的高端商业综合体，艺术装置与购物体验结合。',desc:'聆听万象城艺术空间介绍，回答商业与艺术融合问题。',reward:'徽章「艺术MALL人」',lat:30.599266,lng:114.280583,qa:{q:'武汉万象城最突出的特色是什么？',o:['商业与艺术空间的融合','全部是高端餐厅','只卖奢侈品'],a:0}},
+{id:'Q4-04',name:'越秀国金天地',type:'生活',game:'compare',task:'滨江会客厅',intro:'汉口滨江的新兴商业空间，开放式街区与江景餐厅结合。',desc:'对比越秀国金天地建设前后，感受汉口滨江商业新生。',reward:'徽章「滨江玩家」',lat:30.584588,lng:114.277417},
+{id:'Q4-05',name:'上海三联书店READWAY',type:'生活',game:'sort',task:'书店进化',intro:'百年书店品牌在武汉的年轻化书店，「阅读+咖啡+文创」的生活方式空间。',desc:'将书店从传统到生活方式的演变按时间排序。',reward:'徽章「阅读生活家」',lat:30.578861,lng:114.293362,events:[{year:'1932年',desc:'上海三联书店前身在上海创立'},{year:'20世纪',desc:'以学术出版与阅读文化著称'},{year:'2010年代后',desc:'转型为「阅读+文创+咖啡」的生活方式空间'}]}
+]}
+]},
+M:{name:'美食探索层',desc:'全龄市井生活空间 · 美食打卡',identity:'美食猎人',emoji:'🍜',color:'#d97706',routes:[
+{id:'M1',name:'兰陵路老字号小吃线',theme:'兰陵路老字号',emoji:'🥩',color:'#d97706',finalReward:'「兰陵小吃家」',
+ points:[
+{id:'M1-01',name:'顶好牛肉面',type:'美食',game:'voice',task:'牛肉面对决',intro:'兰陵路传奇牛肉面馆，汤头浓郁、牛肉软烂，是汉口人心中「牛肉面天花板」。',desc:'品尝打卡解锁「牛肉面鉴赏家」。',reward:'徽章「牛肉面鉴赏家」',lat:30.586764,lng:114.298103,qa:{q:'顶好牛肉面最令人称道的是什么？',o:['汤头浓郁+牛肉软烂','面条分量巨大','只在晚上营业'],a:0}},
+{id:'M1-02',name:'刘记三狗牛肉面',type:'美食',game:'compare',task:'排队王',intro:'兰陵路上的老牌牛肉面馆，热干面与牛肉面双绝，排队是常态。',desc:'对比刘记三狗面馆今昔，感受老店排队文化。',reward:'徽章「牛肉面传人」',lat:30.587570,lng:114.297251},
+{id:'M1-03',name:'金壶刘兰陵藕粉',type:'美食',game:'puzzle',task:'藕粉三叠',intro:'手工藕粉老铺，冲一碗晶莹剔透的藕粉，是汉味小吃的温柔时刻。',desc:'拼合藕粉制作过程，解锁传统小吃图鉴。',reward:'徽章「藕粉达人」',lat:30.587288,lng:114.297787},
+{id:'M1-04',name:'冷记卤味',type:'美食',game:'sort',task:'卤味江湖',intro:'武汉卤味老字号，鸭脖、藕带、卤藕……卤香四溢的市井味道。',desc:'将卤味从家常到老字号的过程按时间排序。',reward:'徽章「卤味传人」',lat:30.587252,lng:114.297436,events:[{year:'民间传统',desc:'卤味本是武汉家常餐桌上的日常菜'},{year:'20世纪',desc:'卤味店铺兴起，形成市井卤味文化'},{year:'21世纪',desc:'冷记等品牌连锁化，走向全国'}]},
+{id:'M1-05',name:'同街一条路',type:'生活',game:'compare',task:'一条路食光',intro:'兰陵路的美食街巷，老字号鳞次栉比，是「老武汉味道」的活地图。',desc:'对比兰陵路美食街今昔，打卡整条街的老字号。',reward:'徽章「兰陵小吃家」',lat:30.587075,lng:114.297619}
+]},
+{id:'M2',name:'武昌过早线',theme:'户部巷—粮道街',emoji:'🥟',color:'#ca8a04',finalReward:'「过早传人」',
+ points:[
+{id:'M2-01',name:'户部巷',type:'美食',game:'compare',task:'汉味第一巷',intro:'「汉味早点第一巷」，热干面、豆皮、糊汤粉……一网打尽武汉早餐。',desc:'对比户部巷今昔，感受武汉过早文化。',reward:'徽章「过早先锋」',lat:30.547412,lng:114.298068},
+{id:'M2-02',name:'粮道街',type:'美食',game:'puzzle',task:'过早拼图',intro:'武昌烟火气最浓的过早街，从油饼包烧麦到生烫牛肉粉，是学子们的早餐天堂。',desc:'拼合粮道街过早画面，解锁武昌过早图鉴。',reward:'徽章「武昌老饕」',lat:30.547408,lng:114.310451},
+{id:'M2-03',name:'蔡林记',type:'美食',game:'voice',task:'芝麻酱传奇',intro:'武汉热干面「金字招牌」，芝麻酱香浓的百年老字号。',desc:'聆听蔡林记热干面故事，回答热干面相关问题。',reward:'徽章「热干面传人」',lat:30.579242,lng:114.292272,qa:{q:'蔡林记热干面最核心的灵魂调料是什么？',o:['芝麻酱','辣椒油','豆瓣酱'],a:0}},
+{id:'M2-04',name:'周黑鸭',type:'美食',game:'compare',task:'甜辣密码',intro:'武汉走出的卤味巨头，甜辣口味的周黑鸭是「武汉味道」的全国名片。',desc:'对比周黑鸭门店发展，感受武汉卤味品牌的崛起。',reward:'徽章「卤味品鉴家」',lat:30.546156,lng:114.300214},
+{id:'M2-05',name:'财大小吃街',type:'美食',game:'voice',task:'学生食堂',intro:'中南财经政法大学旁的小吃街，大学生用脚投票的「美食天花板」。',desc:'聆听财大小吃街的故事，回答校园美食文化问题。',reward:'徽章「校园美食家」',lat:30.478225,lng:114.384175,qa:{q:'财大小吃街为何被称为「美食天花板」？',o:['物美价廉种类丰富，大学生集体认可','全部是米其林餐厅','只卖高档料理'],a:0}}
+]},
+{id:'M3',name:'汉口过早老店线',theme:'水塔街—德华楼',emoji:'🏮',color:'#dc2626',finalReward:'「汉口老饕」',
+ points:[
+{id:'M3-01',name:'水塔街',type:'美食',game:'compare',task:'水塔烟火',intro:'汉口老字号聚集的过早街，水塔老建筑见证百年汉口烟火。',desc:'对比水塔街今昔，感受老汉口过早文化。',reward:'徽章「水塔街战神」',lat:30.579392,lng:114.290314},
+{id:'M3-02',name:'德华楼',type:'美食',game:'sort',task:'百年德华',intro:'百年老字号「包子大王」，年糕、汤包、包子延续几代武汉人的味觉记忆。',desc:'将德华楼百年发展历程按时间排序。',reward:'徽章「包子传人」',lat:30.585742,lng:114.293082,events:[{year:'1924年',desc:'德华楼在汉口创立，以包子和年糕闻名'},{year:'1956年',desc:'公私合营后成为国营老字号'},{year:'2000年后',desc:'老字号复兴，入选非遗美食'}]},
+{id:'M3-03',name:'真茶屋',type:'美食',game:'voice',task:'茶饮密码',intro:'武汉本土新茶饮品牌，主打真材实料的新式茶饮，是年轻人的奶茶新宠。',desc:'聆听真茶屋品牌故事，回答新式茶饮文化问题。',reward:'徽章「茶饮品鉴家」',lat:30.543358,lng:114.298879,qa:{q:'真茶屋强调的「真」主要指什么？',o:['真奶真茶真材料','名字里带真字','只做真水果'],a:0}},
+{id:'M3-04',name:'孙氏豆皮',type:'美食',game:'puzzle',task:'豆皮三鲜',intro:'汉口山海关路豆皮老店，金黄蛋皮包糯米三鲜馅，锅气十足。',desc:'拼合豆皮制作流程，解锁豆皮图鉴。',reward:'徽章「豆皮世家」',lat:30.603486,lng:114.308117},
+{id:'M3-05',name:'李记鸡冠饺',type:'美食',game:'compare',task:'排队王',intro:'山海关路排队王，外酥里嫩的炸饺子，过早标配。',desc:'对比李记鸡冠饺摊位今昔，感受市井过早魅力。',reward:'徽章「炸物猎人」',lat:30.603879,lng:114.307379}
+]},
+{id:'M4',name:'吉庆街宵夜线',theme:'吉庆街宵夜',emoji:'🍢',color:'#92400e',finalReward:'「宵夜战神」',
+ points:[
+{id:'M4-01',name:'品味馆·地道湖北菜',type:'美食',game:'puzzle',task:'荆楚一桌',intro:'主打地道湖北菜的馆子，藕汤、武昌鱼、粉蒸肉，一桌吃尽荆楚味。',desc:'拼合湖北菜拼盘画面，解锁荆楚美食图鉴。',reward:'徽章「湖北菜传人」',lat:30.584823,lng:114.290837},
+{id:'M4-02',name:'卢庄(江汉路)',type:'美食',game:'compare',task:'家常味',intro:'江汉路附近的湖北家常菜馆，物美价廉，是本地人的聚餐首选。',desc:'对比卢庄餐厅今昔，感受本地人聚餐文化。',reward:'徽章「市井美食家」',lat:30.582760,lng:114.291732},
+{id:'M4-03',name:'尹珍珠·韩式无限烤肉',type:'美食',game:'sort',task:'烤肉夜话',intro:'汉口人气烤肉店，「无限量」的烟火气点燃江城的夜。',desc:'将烤肉从韩式小馆到网红店的成长按时间排序。',reward:'徽章「烤肉猎人」',lat:30.583289,lng:114.288117,events:[{year:'初创期',desc:'尹珍珠以韩式家庭烤肉小店起步'},{year:'成长期',desc:'凭借无限量+高性价比走红'},{year:'现在',desc:'成为江汉路周边宵夜人气王'}]},
+{id:'M4-04',name:'吉庆街',type:'美食',game:'voice',task:'宵夜江湖',intro:'武汉宵夜文化地标，「过早户部巷，宵夜吉庆街」，鸭脖、虾球、小炒配民间艺人表演。',desc:'聆听吉庆街故事，回答武汉宵夜文化问题。',reward:'徽章「宵夜战神」',lat:30.585925,lng:114.292509,qa:{q:'武汉人常说「过早户部巷，宵夜____」，横线处填什么？',o:['吉庆街','江汉路','万松园'],a:0}}
+]}
+]},
+S:{name:'生态疗愈层',desc:'城市绿地休憩空间 · 疗愈探索',identity:'自然疗愈师',emoji:'🌿',color:'#16a34a',routes:[
+{id:'S1',name:'东湖湖山绿道线',theme:'听涛—磨山—落雁',emoji:'🚴',color:'#16a34a',finalReward:'「东湖大满贯」',
+ points:[
+{id:'S1-01',name:'东湖绿道',type:'自然',game:'compare',task:'能量场骑行',intro:'东湖是个巨大的能量场，找个没课的下午过去骑骑车，安静地坐一会，有时候可以看到有人驻唱，每次离开心情都特别好。',desc:'下午骑行打卡，驻唱偶遇触发「音乐疗愈」彩蛋，离开心情变好解锁「东湖治愈师」。',reward:'徽章「东湖治愈师」',lat:30.574625,lng:114.374989},
+{id:'S1-02',name:'东湖听涛景区',type:'自然',game:'voice',task:'行吟问天',intro:'东湖最早的景区，「行吟阁」与屈原雕塑诉说着楚文化的诗意。',desc:'聆听行吟阁与屈原的故事，回答楚文化问题。',reward:'徽章「湖畔诗人」',lat:30.564713,lng:114.376688,qa:{q:'听涛景区行吟阁纪念的是哪位诗人？',o:['屈原','李白','苏轼'],a:0}},
+{id:'S1-03',name:'东湖磨山景区',type:'自然',game:'puzzle',task:'楚城寻梦',intro:'磨山是楚文化游览中心，楚天台、楚城等仿楚建筑群矗立湖畔。',desc:'拼合楚天台画面，还原楚文化圣地。',reward:'徽章「楚文化行者」',lat:30.548737,lng:114.413148},
+{id:'S1-04',name:'东湖落雁景区',type:'自然',game:'compare',task:'湿地之肺',intro:'东湖最静谧的湿地景区，芦洲古渡、雁栖湖畔，是观鸟与湿地体验胜地。',desc:'对比落雁景区湿地今昔，感受生态之美。',reward:'徽章「湿地守护者」',lat:30.560568,lng:114.434450},
+{id:'S1-05',name:'东湖吹笛景区',type:'自然',game:'sort',task:'吹笛探幽',intro:'东湖东南角的幽静景区，森林环绕、湖汊交错，适合深度疗愈。',desc:'将吹笛景区从荒湖到生态景区的发展按时间排序。',reward:'徽章「森林疗愈师」',lat:30.519524,lng:114.447601,events:[{year:'1980年代',desc:'吹笛一带为东湖渔场与农田'},{year:'2000年前后',desc:'纳入东湖风景区统一规划'},{year:'2016年后',desc:'东湖绿道开通，吹笛景区成为骑行疗愈胜地'}]}
+]},
+{id:'S2',name:'汉口江滩公园线',theme:'汉口江滩公园群',emoji:'🌊',color:'#1d4ed8',finalReward:'「江滩守护神」',
+ points:[
+{id:'S2-01',name:'汉口江滩',type:'自然',game:'compare',task:'江滩四季',intro:'亚洲最大的滨江公园，芦苇荡、樱花园、大舞台，四季皆景的城市会客厅。',desc:'对比江滩四季景观，感受长江边城市公园之美。',reward:'徽章「江滩守望者」',lat:30.610162,lng:114.319404},
+{id:'S2-02',name:'解放公园',type:'建筑',game:'puzzle',task:'城市绿肺',intro:'汉口核心区的百年公园，苏联空军志愿队烈士墓承载城市记忆，绿意葱茏。',desc:'拼合解放公园湖心亭画面，感受老公园的宁静。',reward:'徽章「绿意守护人」',lat:30.608418,lng:114.298029},
+{id:'S2-03',name:'中山公园',type:'建筑',game:'voice',task:'百年公园',intro:'武汉最老的公园之一，承载几代武汉人的童年记忆，游乐场与园林相映成趣。',desc:'聆听中山公园百年故事，回答公园文化问题。',reward:'徽章「公园记忆人」',lat:30.586650,lng:114.271559,qa:{q:'中山公园对于武汉市民的意义是什么？',o:['几代人的童年与休闲记忆','只有外地游客去','只是交通枢纽'],a:0}},
+{id:'S2-04',name:'宝岛公园',type:'建筑',game:'compare',task:'湖心落日',intro:'以台湾宝岛为设计主题的社区公园，湖心双塔是拍摄日落的网红机位。',desc:'对比宝岛公园四季，打卡湖心塔日落。',reward:'徽章「湖畔摄影师」',lat:30.597736,lng:114.284332},
+{id:'S2-05',name:'常青人才公园',type:'建筑',game:'sort',task:'人才绿洲',intro:'江汉区新建的人才主题公园，融合科创元素与生态景观，全龄友好。',desc:'将常青公园从老公园到人才公园的转型按时间排序。',reward:'徽章「全龄友好者」',lat:30.619713,lng:114.238304,events:[{year:'早期',desc:'常青公园为区域性社区公园'},{year:'2010年代',desc:'公园改造升级，加入智慧设施'},{year:'近年来',desc:'打造为人才主题公园，全龄友好空间'}]}
+]},
+{id:'S3',name:'武昌湖园绿意线',theme:'沙湖—月湖—马鞍山',emoji:'💧',color:'#0d9488',finalReward:'「湖园绿意人」',
+ points:[
+{id:'S3-01',name:'沙湖公园',type:'自然',game:'compare',task:'沙湖十景',intro:'武昌中心最大的湖泊公园，琴园、湿地艺术园串联起城市绿心。',desc:'对比沙湖公园今昔，感受湿地园林之美。',reward:'徽章「湖园诗人」',lat:30.572224,lng:114.351107},
+{id:'S3-02',name:'月湖公园',type:'自然',game:'puzzle',task:'月湖知音',intro:'汉阳月湖畔的生态公园，知音文化与园林景观交融，琴台大剧院坐落于此。',desc:'拼合月湖公园画面，感受知音文化景观。',reward:'徽章「知音湖畔人」',lat:30.557631,lng:114.255550},
+{id:'S3-03',name:'墨水湖公园',type:'自然',game:'voice',task:'墨池传说',intro:'汉阳墨水湖畔的湿地公园，因「墨池传说」得名，是市民亲水休闲的好去处。',desc:'聆听墨水湖名字由来，回答汉阳水文化问题。',reward:'徽章「湖畔探索者」',lat:30.538775,lng:114.221330,qa:{q:'墨水湖的名字与哪个传说有关？',o:['古人洗墨形成的墨池传说','湖水颜色是黑色','湖边全是墨厂'],a:0}},
+{id:'S3-04',name:'马鞍山森林公园',type:'自然',game:'compare',task:'森林深呼吸',intro:'武汉最大城郊森林公园，山峦起伏、森林茂密，「城市绿肺」与烧烤野趣兼具。',desc:'对比马鞍山森林公园今昔，感受城郊森林氧吧。',reward:'徽章「森林疗愈师」',lat:30.512231,lng:114.444863},
+{id:'S3-05',name:'武汉植物园',type:'自然',game:'sort',task:'植物四季',intro:'中科院武汉植物园，上万种植物，荷花、杜鹃、郁金香四季花海不断。',desc:'将植物园花事从春到冬按时间排序。',reward:'徽章「植物学家」',lat:30.544563,lng:114.423278,events:[{year:'春季',desc:'樱花与杜鹃盛开，迎来赏花季'},{year:'夏季',desc:'荷花满塘，水生植物园最盛'},{year:'秋冬',desc:'菊花与温室植物登场，园内色彩斑斓'}]}
+]},
+{id:'S4',name:'郊野生态公园线',theme:'青山—汤逊湖',emoji:'🌳',color:'#65a30d',finalReward:'「郊野生态家」',
+ points:[
+{id:'S4-01',name:'青山江滩公园',type:'自然',game:'compare',task:'工业新生',intro:'由老工业码头改造的生态江滩，夕阳下看「钢铁之城」与江景同框。',desc:'对比青山江滩改造前后，感受工业岸线生态蝶变。',reward:'徽章「生态蝶变见证者」',lat:30.640960,lng:114.383636},
+{id:'S4-02',name:'四美塘公园',type:'自然',game:'puzzle',task:'街心花园',intro:'青山老城区街心公园，湖塘错落、绿树成荫，是周边居民的日常花园。',desc:'拼合四美塘湖景画面，感受老城绿意。',reward:'徽章「街心花园人」',lat:30.595482,lng:114.336606},
+{id:'S4-03',name:'青山公园',type:'自然',game:'voice',task:'杜鹃花语',intro:'青山老牌公园，园林精巧、花木繁茂，春季杜鹃花会闻名武汉。',desc:'聆听青山公园花事故事，回答公园文化问题。',reward:'徽章「花会达人」',lat:30.638651,lng:114.408033,qa:{q:'青山公园每年春天最著名的花事是什么？',o:['杜鹃花会','郁金香节','荷花展'],a:0}},
+{id:'S4-04',name:'紫阳公园',type:'自然',game:'compare',task:'古城湖光',intro:'武昌古城内的百年公园，紫阳湖水与古城墙遗迹相映，历史文化气息浓郁。',desc:'对比紫阳公园今昔，感受武昌古城园林。',reward:'徽章「古城园林人」',lat:30.529997,lng:114.305273},
+{id:'S4-05',name:'汤逊湖',type:'自然',game:'sort',task:'大湖渔歌',intro:'亚洲最大的城中湖，湖面浩渺、湿地环绕，是武汉南部的生态绿心。',desc:'将汤逊湖从渔乡到城市生态湖的变迁按时间排序。',reward:'徽章「大湖守护者」',lat:30.416618,lng:114.329342,events:[{year:'传统时期',desc:'汤逊湖是武汉南部渔乡，以「汤逊湖鱼丸」闻名'},{year:'2000年前后',desc:'周边城市化加速，环湖建成大学城与社区'},{year:'近年来',desc:'环湖绿道与湿地公园建成，成为生态休闲湖区'}]}
+]}
+]}};
+</script>
+<script>
+var TOTAL_POINTS=0,LAYER_KEYS=[];
+for(var LK in ALL_LAYERS){LAYER_KEYS.push(LK);ALL_LAYERS[LK].routes.forEach(function(r){TOTAL_POINTS+=r.points.length;});}
+var activeLayer='L',activeRouteIdx=0;
+var GAME_TYPES={puzzle:'🧩 拼图修复',sort:'🕰️ 排序修复',voice:'🎙️ 语音解谜',compare:'📸 对比修复'};
+var LAYER_TABS=[
+ {key:'L',name:'历史叙事',emoji:'🏛️'},
+ {key:'Q',name:'青年策展',emoji:'🎨'},
+ {key:'M',name:'美食探索',emoji:'🍜'},
+ {key:'S',name:'生态疗愈',emoji:'🌿'}
 ];
-
-/* ============================================================
-   STATE
-   ============================================================ */
-let activeRouteIdx = 0;
-let repairedPoints = JSON.parse(localStorage.getItem('repairedPoints')||'[]');
-let map, currentMarkers=[], currentPolyline=null;
-
-function saveRepair(){ localStorage.setItem('repairedPoints',JSON.stringify(repairedPoints)); }
-function isRepaired(id){ return repairedPoints.indexOf(id)!==-1; }
-function getRepairedCount(){ return repairedPoints.length; }
-
+var COMPOSITE_ACHIEVEMENTS=[
+ {id:'C1',name:'江滩双重奏',icon:'🎻',desc:'同时完成历史叙事层「汉口江滩」与生态疗愈层「汉口江滩」',check:function(){return isRepaired('L1-05')&&isRepaired('S2-01');}},
+ {id:'C2',name:'潮流吃货',icon:'🍢',desc:'同时打卡青年策展层「江汉路/扬子街」与美食探索层「水塔街」',check:function(){return (isRepaired('Q1-01')||isRepaired('Q1-05'))&&isRepaired('M3-01');}},
+ {id:'C3',name:'东湖大满贯',icon:'🏆',desc:'完成生态疗愈层 S1「东湖湖山绿道线」全部点位',check:function(){return ['S1-01','S1-02','S1-03','S1-04','S1-05'].every(function(id){return isRepaired(id);});}},
+ {id:'C4',name:'武昌古城美食家',icon:'🥟',desc:'完成美食探索层「户部巷/粮道街」并解锁任一历史叙事层点位',check:function(){var Lids=[];ALL_LAYERS.L.routes.forEach(function(r){r.points.forEach(function(p){Lids.push(p.id);});});return isRepaired('M2-01')&&isRepaired('M2-02')&&Lids.some(function(id){return isRepaired(id);});}}
+];
+var THEORY_DATA=[
+ {title:'可玩城市（Playable City）',content:'将城市空间转化为游戏化场域，让市民在探索中体验城市空间的层次感。通过游戏化的方式，打破传统城市游览的单向信息接收模式，让市民成为城市空间的主动发现者和共同创造者。'},
+ {title:'多层交互（Multi-layer Interaction）',content:'历史叙事/青年策展/美食探索/生态疗愈四层空间的游戏化建构，让城市成为一个可被「阅读」的立体文本。每一层对应一种空间类型与生活方式，16条路线、79个点位共同构成武汉的空间故事链。'},
+ {title:'地图叙事（Map Narrative）',content:'地图作为故事载体，每条路线串联起一段空间叙事：历史层的实景剧本杀、青年层的艺术打卡、美食层的老字号寻访、生态层的自然疗愈，让空间本身成为讲述城市记忆的媒介。'},
+ {title:'参与式营造（Participatory Placemaking）',content:'用户通过「修复/打卡」的行为参与城市空间的意义生产，强化对地方的认同与归属感。四层机制中的共创设计（地名故事投稿、UGC穿搭模板、美食评价、自然观察笔记）激发自下而上的地方营造动力。'}
+];
+var MECH_ROWS=[
+ ['探索','历史剧情线解锁','艺术点位发现','美食店铺寻找','自然路径探索'],
+ ['打卡','建筑/旧址拍照','视觉符号/装置打卡','菜品/店铺打卡','景观/季节打卡'],
+ ['收集','地名故事碎片','展览/文创图鉴','美食图鉴/老字号印章','植物/鸟类图鉴'],
+ ['任务','解谜/情景剧','穿搭/拍照挑战','品尝/对比挑战','停留时长/运动轨迹'],
+ ['成就','历史见证者系列','潮流玩家系列','美食猎人系列','自然疗愈师系列'],
+ ['社交','剧情组队探案','打卡分享/集章交换','家庭组队/拼桌任务','亲子互动/老年友好'],
+ ['共创','地名故事投稿','UGC穿搭/拍照模板','美食评价/推荐','自然观察笔记']
+];
+var map,mapMarkers=[];
+function getRoutes(){return ALL_LAYERS[activeLayer].routes;}
+function isRepaired(id){try{var r=JSON.parse(localStorage.getItem('fixedPoints')||'[]');return r.indexOf(id)!==-1;}catch(e){return false;}}
+function getRepairedCount(){var n=0;for(var k in ALL_LAYERS){ALL_LAYERS[k].routes.forEach(function(r){r.points.forEach(function(p){if(isRepaired(p.id))n++;});});}return n;}
+function getAchievedRoutes(){try{return JSON.parse(localStorage.getItem('achievedRoutes')||'[]');}catch(e){return [];}}
+function getAchievedComposites(){try{return JSON.parse(localStorage.getItem('achievedComposites')||'[]');}catch(e){return [];}}
+function findPointById(id){for(var k in ALL_LAYERS){for(var i=0;i<ALL_LAYERS[k].routes.length;i++){var r=ALL_LAYERS[k].routes[i];for(var j=0;j<r.points.length;j++){if(r.points[j].id===id)return r.points[j];}}}return null;}
+function findRouteOfPoint(id){for(var k in ALL_LAYERS){for(var i=0;i<ALL_LAYERS[k].routes.length;i++){var r=ALL_LAYERS[k].routes[i];for(var j=0;j<r.points.length;j++){if(r.points[j].id===id)return r;}}}return null;}
 /* ============================================================
    MAP
    ============================================================ */
 function initMap(){
-  map = L.map('map',{center:[30.55,114.30],zoom:12,zoomControl:false});
+  if(map)return;
+  map=L.map('map',{zoomControl:false,attributionControl:true}).setView([30.58,114.30],13);
   L.control.zoom({position:'bottomright'}).addTo(map);
-  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',{
-    subdomains:'1234',attribution:'&copy; 高德地图',maxZoom:19
-  }).addTo(map);
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',{subdomains:'1234',maxZoom:18,attribution:'高德地图'}).addTo(map);
+  window.addEventListener('resize',function(){map.invalidateSize();});
 }
-
-function updateMap(route){
-  currentMarkers.forEach(m=>map.removeLayer(m));currentMarkers=[];
-  if(currentPolyline)map.removeLayer(currentPolyline);
-  var latlngs=[];
-  route.points.forEach((pt,i)=>{
-    var latlng=[pt.lat,pt.lng];latlngs.push(latlng);
-    var repaired=isRepaired(pt.id);
+function layerEmoji(){return ALL_LAYERS[activeLayer].emoji;}
+function updateMap(){
+  if(mapMarkers){mapMarkers.forEach(function(m){map.removeLayer(m);});mapMarkers=[];}
+  var r=getRoutes()[activeRouteIdx];
+  var emoji=layerEmoji(),color=ALL_LAYERS[activeLayer].color;
+  r.points.forEach(function(p){
+    var done=isRepaired(p.id);
     var icon=L.divIcon({
-      className:'custom-marker-container',
-      html:'<div class="custom-marker'+(repaired?' repaired':'')+'" style="background:'+route.color+'">'+(repaired?'✓':route.emoji)+'</div>',
-      iconSize:[32,32],iconAnchor:[16,16]
+      className:'leaflet-div-icon',
+      html:'<div class="marker-pin'+(done?' done':'')+'" style="background:'+color+'"><span>'+emoji+'</span></div>',
+      iconSize:[30,30],iconAnchor:[15,30],popupAnchor:[0,-30]
     });
-    var m=L.marker(latlng,{icon}).addTo(map);
-    m.on('click',function(){openSidePanel(pt,route);});
-    currentMarkers.push(m);
+    var m=L.marker([p.lat,p.lng],{icon:icon}).addTo(map);
+    m.bindTooltip(p.name,{permanent:true,direction:'top',offset:[0,-42],className:'point-label',opacity:1});
+    m.on('click',function(){openSidePanel(p.id);});
+    mapMarkers.push(m);
   });
-  if(latlngs.length>1){currentPolyline=L.polyline(latlngs,{color:route.color,weight:3,opacity:.6,dashArray:'8,6'}).addTo(map);}
-  if(latlngs.length>0){map.fitBounds(L.latLngBounds(latlngs),{padding:[40,40]});}
 }
-
 /* ============================================================
-   ROUTE SELECTOR
+   LAYER / ROUTE DOCK (左侧浮动卡片)
    ============================================================ */
-function renderRouteSelector(){
-  var c=document.getElementById('routeSelector');c.innerHTML='';
-  ROUTES.forEach((r,i)=>{
-    var tab=document.createElement('div');
-    tab.className='route-tab'+(i===activeRouteIdx?' active':'');
-    tab.setAttribute('data-route',i);
-    tab.innerHTML='<span class="tab-emoji">'+r.emoji+'</span><div class="tab-name">'+r.name+'</div><div class="tab-theme">'+r.theme+'</div>';
-    tab.onclick=function(){selectRoute(i);};
-    c.appendChild(tab);
+function layerProgress(key){
+  var tot=0,done=0;
+  ALL_LAYERS[key].routes.forEach(function(r){r.points.forEach(function(p){tot++;if(isRepaired(p.id))done++;});});
+  return {done:done,total:tot};
+}
+function renderLayerCards(){
+  var c=document.getElementById('layerCards');c.innerHTML='';
+  LAYER_TABS.forEach(function(t){
+    var L=ALL_LAYERS[t.key];
+    var pr=layerProgress(t.key);
+    var card=document.createElement('div');
+    card.className='layer-card'+(t.key===activeLayer?' active':'');
+    card.style.setProperty('--layer-c',L.color);
+    card.innerHTML=
+      '<div class="lc-top"><span class="lc-emoji">'+t.emoji+'</span><span class="lc-name">'+t.name+'</span></div>'+
+      '<div class="lc-ident">🎭 '+L.identity+'</div>'+
+      '<div class="lc-prog">进度 '+pr.done+'/'+pr.total+'</div>';
+    card.onclick=function(){activateLayer(t.key,0);};
+    c.appendChild(card);
   });
 }
-
-function selectRoute(idx){
-  activeRouteIdx=idx;var r=ROUTES[idx];
-  document.querySelectorAll('.route-tab').forEach(function(t,i){t.classList.toggle('active',i===idx);});
-  document.getElementById('idName').textContent=r.identity;
-  document.getElementById('idDesc').textContent=r.identity_desc;
-  var rw=document.getElementById('idReward');
-  rw.textContent='最终奖励：'+r.reward;
-  rw.style.background='rgba(184,134,11,0.1)';rw.style.color='var(--blue-text)';
-  document.getElementById('identityCard').style.borderColor=r.color+'44';
-  updateMap(r);closeSidePanel();
+function renderRouteCards(){
+  var c=document.getElementById('routeCards');c.innerHTML='';
+  getRoutes().forEach(function(r,i){
+    var tot=r.points.length,done=0;
+    r.points.forEach(function(p){if(isRepaired(p.id))done++;});
+    var ident=r.finalReward.replace(/[「」]/g,'');
+    var card=document.createElement('div');
+    card.className='route-card'+(i===activeRouteIdx?' active':'');
+    card.style.setProperty('--rc-c',r.color);
+    card.innerHTML=
+      '<div class="rc-top"><span class="rc-emoji">'+r.emoji+'</span><span class="rc-name">'+r.name+'</span>'+
+      (done===tot?'<span class="rc-done">✔</span>':'')+'</div>'+
+      '<div class="rc-ident">🎭 '+ident+'</div>'+
+      '<div class="rc-prog"><span class="rc-bar"><span class="rc-bar-inner" style="width:'+(tot?Math.round(done/tot*100):0)+'%"></span></span>'+
+      '<span class="rc-count">'+done+'/'+tot+'</span></div>';
+    card.onclick=function(){activateRoute(i);};
+    c.appendChild(card);
+  });
 }
-
+function showRouteDock(){var d=document.getElementById('routeDock');if(d)d.style.display='';}
+function activateLayer(key,idx){
+  activeLayer=key;activeRouteIdx=(idx===undefined?0:idx);
+  renderLayerCards();renderRouteCards();showRouteDock();enterRouteView();
+}
+function activateRoute(idx){activeRouteIdx=idx;renderRouteCards();enterRouteView();}
+function enterRouteView(){
+  var layer=ALL_LAYERS[activeLayer],r=getRoutes()[activeRouteIdx];
+  var ident=r.finalReward.replace(/[「」]/g,'');
+  document.getElementById('headerRole').innerHTML='<b>'+ident+'</b>';
+  document.getElementById('headerRole').style.background='linear-gradient(135deg,'+layer.color+',#a8862f)';
+  document.getElementById('mapHint').textContent='路线「'+r.name+'」 · 点击图钉查看点位';
+  var lat=0,lng=0;r.points.forEach(function(p){lat+=p.lat;lng+=p.lng;});
+  lat/=r.points.length;lng/=r.points.length;
+  if(map){map.invalidateSize();}
+  updateMap();renderRoutePanel();
+  map.flyTo([lat,lng],13,{duration:.8});
+  closeSidePanel();
+  updateProgress();updateArchiveBadge();
+}
+/* ============================================================
+   ROUTE PANEL
+   ============================================================ */
+function renderRoutePanel(){
+  var r=getRoutes()[activeRouteIdx];
+  var c=document.getElementById('routePanelBody');
+  var total=r.points.length;
+  var done=0;r.points.forEach(function(p){if(isRepaired(p.id))done++;});
+  var pct=total?Math.round(done/total*100):0;
+  var html='<div class="rp-head"><span class="rp-title">'+r.emoji+' '+r.name+'</span><span class="rp-count">'+done+'/'+total+' 完成</span></div>';
+  html+='<div class="rp-bar"><div class="rp-bar-inner" style="width:'+pct+'%;background:'+r.color+'"></div></div>';
+  html+='<div class="rp-points">';
+  r.points.forEach(function(p,i){
+    var rep=isRepaired(p.id);
+    html+='<div class="rp-point'+(rep?' done':'')+'" style="border-color:'+(rep?'rgba(91,140,90,.4)':'rgba(184,134,11,.35)')+'" onclick="flyToPoint(\''+p.id+'\')">';
+    html+='<span class="rp-n">'+(i+1)+'</span><span class="rp-name">'+p.name+'</span><span class="rp-state">'+(rep?'✓':'○')+'</span></div>';
+  });
+  html+='</div>';
+  var ar=getAchievedRoutes();
+  if(done===total&&ar.indexOf(r.id)!==-1){  html+='<div class="rp-final">🏆 路线终极成就已解锁：'+r.finalReward+'</div>';}
+  c.innerHTML=html;
+}
+function toggleRoutePanel(){
+  var p=document.getElementById('routePanel');
+  p.classList.toggle('collapsed');
+  document.getElementById('routePanelToggle').textContent=p.classList.contains('collapsed')?'📍 路线点位 ▸':'📍 路线点位 ▾';
+  setTimeout(function(){if(map)map.invalidateSize();},300);
+}
+function flyToPoint(id){
+  var p=findPointById(id);
+  if(!p)return;
+  var r=findRouteOfPoint(id);
+  var layerKey=getLayerOfPoint(id);
+  if(layerKey!==activeLayer){
+    var routes=ALL_LAYERS[layerKey].routes;
+    for(var i=0;i<routes.length;i++){if(routes[i].id===r.id){activateLayer(layerKey,i);break;}}
+    setTimeout(function(){map.flyTo([p.lat,p.lng],16,{duration:.6});openSidePanel(id);},450);
+    return;
+  }
+  map.flyTo([p.lat,p.lng],16,{duration:.8});
+  openSidePanel(id);
+}
+function getLayerOfPoint(id){
+  for(var k in ALL_LAYERS){for(var i=0;i<ALL_LAYERS[k].routes.length;i++){var r=ALL_LAYERS[k].routes[i];for(var j=0;j<r.points.length;j++){if(r.points[j].id===id)return k;}}}
+  return null;
+}
 /* ============================================================
    SIDE PANEL
    ============================================================ */
-function getTypeClass(t){
-  if(t==='建筑')return'type-building';if(t==='事件')return'type-event';
-  if(t==='人物')return'type-person';return'type-life';
+function typeEmoji(t){return {建筑:'🏛️',生活:'🏘️',美食:'🍜',自然:'🌳',事件:'📜',艺术:'🎨',人物:'👤'}[t]||'📍';}
+function pointImagePath(id){return 'images/points/'+id+'.png';}
+function openSidePanel(id){
+  var p=findPointById(id);if(!p)return;
+  var r=findRouteOfPoint(id);
+  var rep=isRepaired(id);
+  var sp=document.getElementById('sidePanel');
+  var imgPath=pointImagePath(p.id);
+  var html='<div class="sp-photo" onclick="showLightbox(\''+imgPath+'\')">'+
+    '<span class="sp-photo-label">影像档案</span>'+
+    '<img src="'+imgPath+'" alt="'+p.name+'" onload="this.classList.add(\'loaded\')" onerror="this.parentNode.classList.add(\'error\')">'+
+    '<div class="sp-fallback"><span class="sf-emoji">'+typeEmoji(p.type)+'</span><span class="sf-text">暂无影像档案</span></div>'+
+    '</div>';
+  html+='<div><span class="sp-tag" style="background:'+r.color+'">'+GAME_TYPES[p.game]+'</span><span class="sp-id">'+p.id+'</span></div>';
+  html+='<div class="sp-name">'+p.name+'</div>';
+  html+='<div class="sp-intro">'+p.intro+'</div>';
+  html+='<div class="sp-block"><div class="sb-t">📋 <b>玩法设计</b> · 「'+p.task+'」</div>'+p.desc+'</div>';
+  html+='<div class="sp-block"><div class="sb-t">🏆 <b>解锁成就</b></div><span style="color:var(--red)">'+p.reward+'</span></div>';
+  if(rep){html+='<div class="sp-done">✅ 已完成修复，成就已收入档案</div>';}
+  else{html+='<button class="sp-btn" onclick="startGame(\''+p.id+'\')">🔧 开始修复</button>';}
+  html+='<div style="text-align:center;margin-top:8px;font-size:11px;color:var(--text-faint);cursor:pointer" onclick="closeSidePanel()">收起 ▾</div>';
+  sp.innerHTML=html;
+  sp.classList.add('open');
 }
-function getPlayClass(p){
-  if(p==='拼图修复')return'play-puzzle';if(p==='排序修复')return'play-sort';
-  if(p==='语音解谜')return'play-voice';return'play-compare';
-}
-
-function openSidePanel(pt,route){
-  var repaired=isRepaired(pt.id);
-  var panel=document.getElementById('sidePanel');
-  var overlay=document.getElementById('sidePanelOverlay');
-  var content=document.getElementById('sidePanelContent');
-  content.innerHTML=
-    '<span class="sp-id">'+pt.id+'</span>'+
-    (repaired?'<span class="sp-repaired">✓ 已修复</span>':'')+
-    '<div class="sp-name">'+pt.name+'</div>'+
-    '<div class="sp-year">'+pt.year+'</div>'+
-    '<div class="sp-tags">'+
-      '<span class="sp-tag '+getTypeClass(pt.type)+'">'+pt.type+'</span>'+
-      '<span class="sp-tag '+getPlayClass(pt.play)+'">'+pt.play+'</span>'+
-    '</div>'+
-    '<div class="sp-task">📋 '+pt.task+'</div>'+
-    '<div class="sp-desc">'+pt.desc+'</div>'+
-    '<div class="sp-reward">🏆 '+pt.reward+'</div>'+
-    '<button class="sp-btn'+(repaired?' done':'')+'" onclick="openGameModal(\''+pt.id+'\')">'+(repaired?'✅ 已修复':'🔧 开始修复')+'</button>';
-  panel.classList.add('open');
-  overlay.classList.add('show');
-}
-
-function closeSidePanel(){
-  document.getElementById('sidePanel').classList.remove('open');
-  document.getElementById('sidePanelOverlay').classList.remove('show');
-}
-
+function closeSidePanel(){var sp=document.getElementById('sidePanel');sp.classList.remove('open');}
 /* ============================================================
-   GAME MODALS
+   GAME
    ============================================================ */
-function findPointById(id){
-  for(var i=0;i<ROUTES.length;i++){for(var j=0;j<ROUTES[i].points.length;j++){if(ROUTES[i].points[j].id===id)return ROUTES[i].points[j];}}
-  return null;
+function startGame(id){
+  var p=findPointById(id);if(!p)return;
+  var overlay=document.getElementById('gameOverlay');
+  var modal=document.getElementById('gameModal');
+  modal.innerHTML='<div class="modal-title">🔧 '+p.task+'<div style="font-size:11px;color:var(--text-muted);margin-top:4px">'+p.name+' · '+GAME_TYPES[p.game]+'</div></div>';
+  modal.innerHTML+='<div id="gameContent"></div><button class="modal-btn" id="gameBtn" disabled>请先完成任务</button>';
+  overlay.classList.add('show');
+  var gc=document.getElementById('gameContent');
+  var setBtnDone=function(){var btn=document.getElementById('gameBtn');btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 确认修复';btn.onclick=function(){completeRepair(id);};};
+  if(p.game==='puzzle')buildPuzzleGame(gc,p,setBtnDone);
+  else if(p.game==='sort')buildSortGame(gc,p,setBtnDone);
+  else if(p.game==='voice')buildVoiceGame(gc,p,setBtnDone);
+  else buildCompareGame(gc,p,setBtnDone);
 }
-
-function openGameModal(pointId){
-  var pt=findPointById(pointId);if(!pt)return;
-  var overlay=document.createElement('div');overlay.className='modal-overlay';overlay.id='gameModal';
-  var box=document.createElement('div');box.className='modal-box';
-  var gameComplete=false;
-
-  function closeModal(){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);}
-  function setBtnDone(){
-    var btn=box.querySelector('.modal-btn');if(btn){btn.classList.add('done');btn.textContent='✅ 确认修复';btn.onclick=function(){completeRepair(pointId,pt,overlay);};}
-  }
-
-  box.innerHTML=
-    '<button class="modal-close" onclick="arguments[0].stopPropagation();var m=document.getElementById(\'gameModal\');if(m)m.parentNode.removeChild(m);">✕</button>'+
-    '<h3>'+pt.id+' '+pt.name+'</h3>'+
-    '<div class="modal-sub">'+pt.year+' · '+pt.type+' · '+pt.play+'</div>'+
-    '<div id="gameContent"></div>'+
-    '<button class="modal-btn" disabled>请完成修复任务</button>';
-
-  overlay.appendChild(box);document.body.appendChild(overlay);
-
-  var gc=box.querySelector('#gameContent');
-  if(pt.play==='拼图修复'){buildPuzzleGame(gc,pt,setBtnDone);}
-  else if(pt.play==='排序修复'){buildSortGame(gc,pt,setBtnDone);}
-  else if(pt.play==='语音解谜'){buildVoiceGame(gc,pt,setBtnDone);}
-  else{buildCompareGame(gc,pt,setBtnDone);}
-
-  overlay.onclick=function(e){if(e.target===overlay)closeModal();};
-  box.querySelector('.modal-close').onclick=closeModal;
+function closeGame(){document.getElementById('gameOverlay').classList.remove('show');}
+document.getElementById('gameOverlay').addEventListener('click',function(e){if(e.target===this)closeGame();});
+function completeRepair(id){
+  var p=findPointById(id);if(!p)return;
+  var list=[];
+  try{list=JSON.parse(localStorage.getItem('fixedPoints')||'[]');}catch(e){}
+  if(list.indexOf(id)===-1)list.push(id);
+  localStorage.setItem('fixedPoints',JSON.stringify(list));
+  closeGame();closeSidePanel();
+  updateMap();updateProgress();updateArchiveBadge();renderRoutePanel();
+  var layer=ALL_LAYERS[activeLayer];
+  showSuccess(layer.emoji,'修复完成！',p.name,p.reward,function(){
+    var r=findRouteOfPoint(id);
+    if(r){
+      var done=r.points.filter(function(x){return isRepaired(x.id);}).length;
+      var ar=getAchievedRoutes();
+      if(done===r.points.length&&ar.indexOf(r.id)===-1){
+        ar.push(r.id);localStorage.setItem('achievedRoutes',JSON.stringify(ar));
+        showSuccess('🏆','路线达成！',r.name,r.finalReward,null);
+      }
+    }
+    checkCompositeAchievements();
+  });
 }
-
-function completeRepair(pointId,pt,overlay){
-  if(isRepaired(pointId))return;
-  repairedPoints.push(pointId);saveRepair();
-  // success overlay
-  var so=document.createElement('div');so.className='success-overlay';
-  so.innerHTML='<div class="success-icon">✨</div><div class="success-title">碎片修复成功！</div><div class="success-reward">获得：'+pt.reward+'</div>';
-  document.body.appendChild(so);
-  setTimeout(function(){if(so.parentNode)so.parentNode.removeChild(so);},2200);
-  // close game modal
-  if(overlay.parentNode)overlay.parentNode.removeChild(overlay);
-  // refresh UI
-  setTimeout(function(){
-    updateProgress();
-    selectRoute(activeRouteIdx);
-    updateArchiveBadge();
-  },400);
+function checkCompositeAchievements(){
+  var done=getAchievedComposites();
+  COMPOSITE_ACHIEVEMENTS.forEach(function(ca){
+    if(done.indexOf(ca.id)===-1&&ca.check()){
+      done.push(ca.id);localStorage.setItem('achievedComposites',JSON.stringify(done));
+      showSuccess(ca.icon,'复合成就解锁！',ca.name,ca.desc,null);
+    }
+  });
 }
-
+function showSuccess(icon,title,name,reward,cb){
+  var ov=document.createElement('div');ov.className='success-overlay';
+  ov.innerHTML='<div class="success-card"><div class="sc-icon">'+icon+'</div><div class="sc-title">'+title+'</div><div class="sc-reward"><b>'+name+'</b><br>'+reward+'</div><button class="sc-btn" onclick="this.parentNode.parentNode.remove()">继续探索</button></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click',function(e){if(e.target===ov){ov.remove();if(cb)cb();}});
+  var btn=ov.querySelector('.sc-btn');
+  btn.addEventListener('click',function(){if(cb)cb();});
+}
 /* ---- PUZZLE ---- */
 function buildPuzzleGame(gc,pt,setBtnDone){
-  var slots=[0,0,0,0]; // which piece placed
-  var pieces=['↖️','↗️','↙️','↘️'];
-  var shuffled=pieces.slice().sort(function(){return Math.random()-.5;});
-  var placedCount=0;
-  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">拖动下方emoji到正确位置拼合图片</div>';
-  html+='<div class="puzzle-grid">';
-  for(var i=0;i<4;i++){html+='<div class="puzzle-slot" id="slot'+i+'" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)"></div>';}
-  html+='</div><div class="puzzle-pieces">';
-  for(var j=0;j<4;j++){html+='<div class="puzzle-piece" id="piece'+j+'" draggable="true" ondragstart="dragStartHandler(event)">'+shuffled[j]+'</div>';}
+  var emojis=['🏛️','🌉','🎭','🕰️'];
+  var pieces=emojis.slice(0,4);
+  var slots=[null,null,null,null];
+  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">点击碎片，再点击空位放入</div><div class="puzzle-board">';
+  for(var i=0;i<4;i++){html+='<div class="puzzle-piece" id="slot'+i+'" onclick="putPiece('+i+')">❔</div>';}
+  html+='</div><div style="height:8px"></div><div class="puzzle-board">';
+  pieces.forEach(function(e,i){html+='<div class="puzzle-piece" id="piece'+i+'" onclick="pickPiece('+i+')">'+e+'</div>';});
   html+='</div>';
   gc.innerHTML=html;
-
-  window.dragStartHandler=function(e){e.dataTransfer.setData('text',e.target.id);};
-  window.dragOverHandler=function(e){e.preventDefault();};
-  window.dropHandler=function(e){
-    e.preventDefault();
-    var pieceId=e.dataTransfer.getData('text');
-    var pieceEl=document.getElementById(pieceId);
-    var slotEl=e.target.closest('.puzzle-slot');if(!slotEl)return;
-    var slotIdx=parseInt(slotEl.id.replace('slot',''));
-    if(slots[slotIdx]!==0)return;
-    slots[slotIdx]=parseInt(pieceId.replace('piece',''));
-    slotEl.textContent=shuffled[slots[slotIdx]];
-    slotEl.classList.add('filled');
-    pieceEl.classList.add('placed');
-    placedCount++;
-    if(placedCount===4){
+  gc._slots=slots;gc._pieceEmojis=pieces;
+  gc._tryPlace=function(idx){
+    var slot=document.getElementById('slot'+idx);
+    if(slot.classList.contains('placed'))return;
+    var pe=gc._pendingPiece;
+    if(pe==null)return;
+    slot.textContent=pe;
+    slot.classList.add('placed');
+    document.getElementById('piece'+gc._pendingIdx).style.visibility='hidden';
+    slots[idx]=pe;
+    gc._pendingPiece=null;gc._pendingIdx=null;
+    if(slots.every(function(s){return s!==null;})){
       var btn=document.querySelector('#gameModal .modal-btn');
       btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 确认修复';
       btn.onclick=function(){setBtnDone();};
     }
   };
 }
-
+window.pickPiece=function(idx){
+  var gc=document.getElementById('gameContent');if(!gc)return;
+  var pieces=document.querySelectorAll('#gameContent .puzzle-piece');
+  pieces.forEach(function(el){el.classList.remove('selected');});
+  var el=document.getElementById('piece'+idx);
+  if(el.style.visibility==='hidden')return;
+  el.classList.add('selected');
+  gc._pendingIdx=idx;gc._pendingPiece=gc._pieceEmojis[idx];
+};
+window.putPiece=function(idx){var gc=document.getElementById('gameContent');if(gc&&gc._tryPlace)gc._tryPlace(idx);};
 /* ---- SORT ---- */
 function buildSortGame(gc,pt,setBtnDone){
-  var events=[];
-  if(pt.id==='J-08'){
-    events=[
-      {year:'1911年10月9日',desc:'起义计划泄露，彭楚藩等三人被捕就义'},
-      {year:'1911年10月10日',desc:'武昌起义第一枪在工程营打响'},
-      {year:'1911年10月11日',desc:'湖北军政府成立，推举黎元洪为都督'}
-    ];
-  }else if(pt.id==='J-09'){
-    events=[
-      {year:'1911年10月10日',desc:'武昌起义爆发'},
-      {year:'1911年10月11日',desc:'湖北军政府（红楼）成立'},
-      {year:'1912年1月1日',desc:'中华民国成立，孙中山就任临时大总统'}
-    ];
-  }else if(pt.id==='J-12'){
-    events=[
-      {year:'1921年7月',desc:'中共一大在上海召开'},
-      {year:'1927年4月',desc:'中共五大在武汉召开'},
-      {year:'1927年8月',desc:'八七会议在汉口召开'}
-    ];
-  }else{
-    events=[
-      {year:'1911年10月10日',desc:'武昌起义爆发'},
-      {year:'1911年10月11日',desc:'湖北军政府成立'},
-      {year:'1912年1月1日',desc:'中华民国成立'}
-    ];
-  }
+  var events=pt.events||[{year:'事件一',desc:'请按时间顺序排列'},{year:'事件二',desc:'请按时间顺序排列'},{year:'事件三',desc:'请按时间顺序排列'}];
   var correctOrder=events.map(function(_,i){return i;});
   var shuffled=events.slice().sort(function(){return Math.random()-.5;});
   var selected=[];
-  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">按时间先后顺序点击选择</div>';
-  html+='<div class="sort-list">';
+  var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">按时间先后顺序点击选择</div><div class="sort-list">';
   shuffled.forEach(function(ev,i){
-    html+='<div class="sort-item" id="sortItem'+i+'" onclick="selectSortItem('+i+',\''+ev.year+'\')"><div class="sort-year">📅 年份未知</div><div class="sort-desc">'+ev.desc+'</div></div>';
+    html+='<div class="sort-item" id="sortItem'+i+'" onclick="selectSortItem('+i+',\''+ev.year+'\')"><div class="sort-year">📅 时间未知</div><div class="sort-desc">'+ev.desc+'</div></div>';
   });
   html+='</div><div class="sort-pick-order" id="sortOrder">请按时间先后点击...</div>';
   gc.innerHTML=html;
   gc._shuffled=shuffled;gc._events=events;gc._selected=selected;gc._correctOrder=correctOrder;
 }
-
 window.selectSortItem=function(idx,yearStr){
   var gc=document.getElementById('gameContent');if(!gc||!gc._shuffled)return;
   var item=document.getElementById('sortItem'+idx);
@@ -684,7 +956,6 @@ window.selectSortItem=function(idx,yearStr){
   var orderEl=document.getElementById('sortOrder');
   orderEl.textContent='已选顺序：'+gc._selected.map(function(si,i){return (i+1)+'. '+gc._shuffled[si].desc.substring(0,8)+'...';}).join(' → ');
   if(gc._selected.length===3){
-    // check order
     var correct=true;
     for(var i=0;i<3;i++){if(gc._selected[i]!==gc._correctOrder[i]){correct=false;break;}}
     if(correct){
@@ -700,41 +971,28 @@ window.selectSortItem=function(idx,yearStr){
       setTimeout(function(){
         items.forEach(function(it){it.classList.remove('selected','wrong');});
         gc._selected=[];orderEl.textContent='请按时间先后点击...';
-        items.forEach(function(it,i){it.querySelector('.sort-year').textContent='📅 年份未知';});
+        items.forEach(function(it,i){it.querySelector('.sort-year').textContent='📅 时间未知';});
       },800);
     }
   }
 };
-
 /* ---- VOICE ---- */
 function buildVoiceGame(gc,pt,setBtnDone){
-  var played=false;
-  var question,options,correctAns;
-  if(pt.id==='J-13'){
-    question='毛泽东在武昌农讲所主要培养的是哪类人才？';
-    options=['军事指挥人才','农民运动骨干','工业技术人才'];correctAns=1;
-  }else if(pt.id==='J-17'){
-    question='"高山流水"故事中，钟子期听出了伯牙琴声中的什么意境？';
-    options=['高山和流水','战场和厮杀','田园和牧歌'];correctAns=0;
-  }else{
-    question='这个历史人物与以下哪个事件有关？';
-    options=['选项A','选项B','选项C'];correctAns=0;
-  }
+  var qa=pt.qa||{q:'关于这个点位，以下哪个说法是正确的？',o:['选项A','选项B','选项C'],a:0};
   var html='<div class="voice-player">';
   html+='<button class="voice-btn" id="voicePlayBtn" onclick="playVoice()">▶️</button>';
   html+='<div class="voice-status" id="voiceStatus">点击播放历史故事</div></div>';
-  html+='<div class="voice-question" id="voiceQuestion" style="display:none">'+question+'</div>';
+  html+='<div class="voice-question" id="voiceQuestion" style="display:none">'+qa.q+'</div>';
   html+='<div class="voice-options" id="voiceOptions" style="display:none">';
-  options.forEach(function(opt,i){html+='<div class="voice-opt" id="voiceOpt'+i+'" onclick="selectVoiceOpt('+i+','+correctAns+')">'+opt+'</div>';});
+  qa.o.forEach(function(opt,i){html+='<div class="voice-opt" id="voiceOpt'+i+'" onclick="selectVoiceOpt('+i+','+qa.a+')">'+opt+'</div>';});
   html+='</div>';
   gc.innerHTML=html;
-  gc._correctAns=correctAns;
+  gc._correctAns=qa.a;
 }
-
 window.playVoice=function(){
   var btn=document.getElementById('voicePlayBtn');if(!btn)return;
   btn.classList.add('playing');btn.textContent='⏳';
-  document.getElementById('voiceStatus').textContent='正在播放：历史故事...';
+  document.getElementById('voiceStatus').textContent='正在播放：点位故事...';
   setTimeout(function(){
     btn.classList.remove('playing');btn.textContent='✅';
     document.getElementById('voiceStatus').textContent='播放完成！请回答问题';
@@ -742,7 +1000,6 @@ window.playVoice=function(){
     document.getElementById('voiceOptions').style.display='';
   },3000);
 };
-
 window.selectVoiceOpt=function(idx,correctAns){
   var opt=document.getElementById('voiceOpt'+idx);if(!opt)return;
   if(idx===correctAns){
@@ -757,20 +1014,18 @@ window.selectVoiceOpt=function(idx,correctAns){
     setTimeout(function(){opt.classList.remove('wrong');},1000);
   }
 };
-
 /* ---- COMPARE ---- */
 function buildCompareGame(gc,pt,setBtnDone){
   var dragged=false;
   var html='<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:8px">拖动中间滑块对比今昔</div>';
   html+='<div class="compare-container" id="compareContainer">';
-  html+='<div class="compare-old"><span style="font-size:48px">📷</span><div>老照片</div><div class="compare-label">'+pt.year+'</div></div>';
-  html+='<div class="compare-new" id="compareNew"><span style="font-size:48px">📷</span><div>现在</div><div class="compare-label">2024年</div></div>';
+  html+='<div class="compare-old"><span style="font-size:46px">🕰️</span><div>昔日旧影</div><div class="compare-label" style="font-size:11px;color:var(--text-faint)">老照片资料</div></div>';
+  html+='<div class="compare-new" id="compareNew"><span style="font-size:46px">📸</span><div>今朝新貌</div><div class="compare-label" style="font-size:11px;color:var(--text-faint)">实地打卡</div></div>';
   html+='<div class="compare-handle" id="compareHandle"></div></div>';
   gc.innerHTML=html;
   var handle=document.getElementById('compareHandle');
   var container=document.getElementById('compareContainer');
   var newEl=document.getElementById('compareNew');
-
   function onMove(e){
     var rect=container.getBoundingClientRect();
     var x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
@@ -779,97 +1034,126 @@ function buildCompareGame(gc,pt,setBtnDone){
     newEl.style.clipPath='inset(0 '+(100-pct)+'% 0 0)';
     dragged=true;
   }
-
-  handle.addEventListener('mousedown',function(e){e.preventDefault();window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',function(){window.removeEventListener('mousemove',onMove);if(dragged){var btn=document.querySelector('#gameModal .modal-btn');btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 完成对比，确认修复';btn.onclick=function(){setBtnDone();};}},{once:true});});
-  handle.addEventListener('touchstart',function(e){e.preventDefault();window.addEventListener('touchmove',onMove);window.addEventListener('touchend',function(){window.removeEventListener('touchmove',onMove);if(dragged){var btn=document.querySelector('#gameModal .modal-btn');btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 完成对比，确认修复';btn.onclick=function(){setBtnDone();};}},{once:true});});
+  function done(){
+    if(dragged){
+      var btn=document.querySelector('#gameModal .modal-btn');
+      btn.disabled=false;btn.classList.add('active');btn.textContent='🔧 完成对比，确认修复';
+      btn.onclick=function(){setBtnDone();};
+    }
+  }
+  handle.addEventListener('mousedown',function(e){e.preventDefault();window.addEventListener('mousemove',onMove);window.addEventListener('mouseup',function(){window.removeEventListener('mousemove',onMove);done();},{once:true});});
+  handle.addEventListener('touchstart',function(e){e.preventDefault();window.addEventListener('touchmove',onMove);window.addEventListener('touchend',function(){window.removeEventListener('touchmove',onMove);done();},{once:true});});
 }
-
 /* ============================================================
-   THEORY POPUP
+   THEORY & MECH
    ============================================================ */
-var THEORY_DATA=[
-  {title:'可玩城市（Playable City）',content:'将城市空间转化为游戏化场域，让市民在探索中体验城市历史的层次感。通过游戏化的方式，打破传统城市游览的单向信息接收模式，让市民成为城市历史的主动发现者和共同创造者。'},
-  {title:'地图叙事（Map Narrative）',content:'地图作为故事载体，每一条路线串联起一段历史叙事，25个点位构成武汉1800年的完整故事链。将地理信息与历史叙事相融合，让空间本身成为讲述城市记忆的媒介。'},
-  {title:'参与式营造（Participatory Placemaking）',content:'用户通过"修复"历史碎片的行为，参与城市记忆的共同生产，强化对地方的认同与归属感。以互动行为重新连接市民与城市空间，激发自下而上的地方营造动力。'},
-  {title:'多层交互（Multi-layer Interaction）',content:'历史/青年/美食/生态四层空间的游戏化建构，让城市成为一个可被"阅读"的立体文本。不同层次的交互方式对应不同的城市体验维度，实现城市文化的深度发掘与多元化呈现。'}
-];
-
+function openTheoryList(){
+  var popup=document.getElementById('theoryListPopup');
+  var html='<button class="tp-close" onclick="closeTheoryList()">✕</button><div class="tp-title">📜 理论框架</div>';
+  html+='<div class="tp-content">「可玩城市·武汉多层交互地图」的学术支撑，点击卡片查看详情。</div>';
+  html+='<div class="tl-grid">';
+  THEORY_DATA.forEach(function(d,i){
+    html+='<div class="tl-card" onclick="openTheoryPopup('+i+')"><div class="tc-no">理论 '+(i+1)+'</div><div class="tc-title">'+d.title+'</div><div class="tc-content">'+d.content+'</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="tl-mech"><button class="mech-btn" onclick="openMechModal()">🎮 四层玩法机制说明</button></div>';
+  popup.innerHTML=html;
+  document.getElementById('theoryListOverlay').classList.add('show');
+}
+function closeTheoryList(){document.getElementById('theoryListOverlay').classList.remove('show');}
 function openTheoryPopup(idx){
   var data=THEORY_DATA[idx];
   var popup=document.getElementById('theoryPopup');
-  popup.innerHTML=
-    '<button class="tp-close" onclick="closeTheoryPopup()">✕</button>'+
-    '<div class="tp-title">'+(idx+1)+'. '+data.title+'</div>'+
-    '<div class="tp-content">'+data.content+'</div>';
+  popup.innerHTML='<button class="tp-close" onclick="closeTheoryPopup()">✕</button><div class="tp-title">'+(idx+1)+'. '+data.title+'</div><div class="tp-content">'+data.content+'</div>';
   document.getElementById('theoryPopupOverlay').classList.add('show');
 }
-
-function closeTheoryPopup(){
-  document.getElementById('theoryPopupOverlay').classList.remove('show');
+function closeTheoryPopup(){document.getElementById('theoryPopupOverlay').classList.remove('show');}
+function openMechModal(){
+  var popup=document.getElementById('mechPopup');
+  var html='<button class="tp-close" onclick="closeMechModal()">✕</button><div class="tp-title">🎮 四层玩法机制对比</div>';
+  html+='<table class="mech-table"><tr><th>机制</th><th>历史叙事层</th><th>青年策展层</th><th>美食探索层</th><th>生态疗愈层</th></tr>';
+  MECH_ROWS.forEach(function(row){
+    html+='<tr>';
+    row.forEach(function(cell,i){html+=(i===0?'<td>':'<td>')+cell+'</td>';});
+    html+='</tr>';
+  });
+  html+='</table><div style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.7">🧭 提示：可在顶部切换四个图层，每层包含 4 条路线；路线全部修复后可解锁终极成就，跨图层打卡还可触发复合成就。</div>';
+  popup.innerHTML=html;
+  document.getElementById('mechPopupOverlay').style.display='flex';
 }
-
+function closeMechModal(){document.getElementById('mechPopupOverlay').style.display='none';}
+document.getElementById('mechPopupOverlay').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
 /* ============================================================
    ARCHIVE
    ============================================================ */
 function openArchive(){
   var overlay=document.createElement('div');overlay.className='archive-overlay';overlay.id='archiveOverlay';
   var totalRepaired=getRepairedCount();
-
-  var html='<div class="archive-header"><h3>📚 武汉历史档案</h3><button class="archive-close" onclick="var m=document.getElementById(\'archiveOverlay\');if(m)m.parentNode.removeChild(m);">✕</button></div>';
+  var html='<div class="archive-box"><div class="archive-header"><h3>📚 城市档案 ('+totalRepaired+'/'+TOTAL_POINTS+')</h3><button class="archive-close" onclick="var m=document.getElementById(\'archiveOverlay\');if(m)m.parentNode.removeChild(m);">✕</button></div>';
   html+='<div class="archive-progress">';
-  ROUTES.forEach(function(r){
-    var rc=0;r.points.forEach(function(p){if(isRepaired(p.id))rc++;});
-    html+='<div class="archive-route-progress"><span class="rp-name" style="color:'+r.color+'">'+r.emoji+' '+r.name+'</span><div class="rp-bar"><div class="rp-bar-inner" style="width:'+((rc/r.points.length)*100)+'%;background:'+r.color+'"></div></div><span class="rp-num">'+rc+'/'+r.points.length+'</span></div>';
-  });
+  for(var k in ALL_LAYERS){
+    var layer=ALL_LAYERS[k];var lc=0,lt=0;
+    layer.routes.forEach(function(r){r.points.forEach(function(p){lt++;if(isRepaired(p.id))lc++;});});
+    html+='<div class="rp-head" style="margin-top:8px"><span style="font-size:12px;font-weight:700;color:'+layer.color+'">'+layer.emoji+' '+layer.name+'</span><span style="font-size:11px;color:var(--text-muted)">'+lc+'/'+lt+'</span></div>';
+    html+='<div class="rp-bar"><div class="rp-bar-inner" style="width:'+((lc/lt)*100)+'%;background:'+layer.color+'"></div></div>';
+  }
   html+='</div>';
-
-  // All 25 cards
-  var allPoints=[];
-  ROUTES.forEach(function(r){r.points.forEach(function(p){allPoints.push({point:p,route:r});});});
-  html+='<div class="archive-grid">';
-  allPoints.forEach(function(item){
-    var p=item.point,r=item.route;var unlocked=isRepaired(p.id);
-    html+='<div class="archive-card '+(unlocked?'unlocked':'locked')+'">';
-    if(unlocked){
-      html+='<div class="arc-icon">✅</div><div class="arc-id">'+p.id+'</div><div class="arc-name">'+p.name+'</div>';
-    }else{
-      html+='<div class="arc-icon">🔒</div><div class="arc-id">???</div><div class="arc-name">???</div>';
-    }
+  for(var k in ALL_LAYERS){
+    var layer=ALL_LAYERS[k];
+    html+='<div class="archive-layer-title">'+layer.emoji+' '+layer.name+'</div><div class="archive-grid">';
+    layer.routes.forEach(function(r){r.points.forEach(function(p){var unlocked=isRepaired(p.id);
+      html+='<div class="archive-card '+(unlocked?'unlocked':'locked')+'">';
+      if(unlocked){html+='<div class="arc-icon">✅</div><div class="arc-id">'+p.id+'</div><div class="arc-name">'+p.name+'</div>';}
+      else{html+='<div class="arc-icon">🔒</div><div class="arc-id">'+p.id+'</div><div class="arc-name">???'+'</div>';}
+      html+='</div>';
+    });});
     html+='</div>';
+  }
+  html+='<div class="comp-title">🎖️ 跨图层复合成就</div><div class="comp-grid">';
+  var comps=getAchievedComposites();
+  COMPOSITE_ACHIEVEMENTS.forEach(function(ca){
+    var unlocked=comps.indexOf(ca.id)!==-1;
+    html+='<div class="comp-card '+(unlocked?'unlocked':'locked')+'"><div class="cc-icon">'+(unlocked?ca.icon:'🔒')+'</div><div class="cc-name">'+ca.name+'</div><div class="cc-desc">'+ca.desc+'</div></div>';
   });
-  html+='</div>';
-
+  html+='</div></div>';
   overlay.innerHTML=html;
   document.body.appendChild(overlay);
   overlay.onclick=function(e){if(e.target===overlay){if(overlay.parentNode)overlay.parentNode.removeChild(overlay);}};
 }
-
 function updateArchiveBadge(){
   var cnt=getRepairedCount();var badge=document.getElementById('archiveBadge');
   if(cnt>0){badge.style.display='flex';badge.textContent=cnt;}else{badge.style.display='none';}
 }
-
 /* ============================================================
-   PROGRESS
+   PROGRESS & INIT
    ============================================================ */
 function updateProgress(){
   var cnt=getRepairedCount();
   document.getElementById('progressDone').textContent=cnt;
-  document.getElementById('progressBar').style.width=((cnt/25)*100)+'%';
+  document.getElementById('progressTotal').textContent=TOTAL_POINTS;
+  document.getElementById('progressBar').style.width=((cnt/TOTAL_POINTS)*100)+'%';
 }
-
-/* ============================================================
-   INIT
-   ============================================================ */
 function init(){
   initMap();
-  renderRouteSelector();
-  updateProgress();
-  updateArchiveBadge();
-  selectRoute(0);
+  document.getElementById('progressTotal').textContent=TOTAL_POINTS;
+  activeLayer='L';activeRouteIdx=0;
+  renderLayerCards();
+  updateProgress();updateArchiveBadge();
+  var initHash=(location.hash||'').replace('#','');
+  if(initHash&&ALL_LAYERS[initHash]){activateLayer(initHash,0);}
 }
+function showLightbox(src){
+  var lb=document.getElementById('lightbox');
+  if(!lb)return;
+  lb.querySelector('img').src=src;
+  lb.classList.add('show');
+}
+function closeLightbox(){
+  var lb=document.getElementById('lightbox');
+  if(lb)lb.classList.remove('show');
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeLightbox();closeGame();}});
 document.addEventListener('DOMContentLoaded',init);
 </script>
-
 </body>
 </html>
