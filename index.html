@@ -140,7 +140,7 @@ body{
 @keyframes pop{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
 /* ---------------- 点位卡片 ---------------- */
 .side-panel{
-  position:fixed;right:10px;bottom:70px;top:auto;width:min(340px,86vw);max-height:calc(100vh - 150px);
+  position:fixed;right:10px;bottom:70px;top:auto;width:min(420px,90vw);max-height:calc(100vh - 150px);
   z-index:660;background:var(--card-bg);border:1px solid var(--border-dim);
   border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);overflow-y:auto;
   display:none;
@@ -152,12 +152,12 @@ body{
   background:#F3E7C8;
 }
 .sp-photo img{
-  width:100%;height:100%;object-fit:cover;border-radius:8px;
-  filter:sepia(10%) contrast(105%);
+  display:block;width:100%;height:100%;object-fit:cover;border-radius:6px;
+  filter:sepia(6%) contrast(102%) saturate(104%);
   opacity:0;transition:opacity .6s ease,transform .4s ease;
 }
 .sp-photo img.loaded{opacity:1}
-.sp-photo:hover img{transform:scale(1.03)}
+.sp-photo:hover img{transform:scale(1.02)}
 .sp-photo .sp-photo-label{
   position:absolute;top:8px;left:8px;z-index:2;
   background:rgba(60,47,40,.92);color:#D4AF37;
@@ -169,6 +169,7 @@ body{
   align-items:center;justify-content:center;color:var(--text-muted);
   background:#F3E7C8;border-radius:8px;pointer-events:none;
 }
+.sp-photo.error{height:160px}
 .sp-photo.error .sp-fallback{display:flex}
 .sp-photo.error img{display:none}
 .sp-fallback .sf-emoji{font-size:46px;margin-bottom:6px}
@@ -178,7 +179,7 @@ body{
   display:none;align-items:center;justify-content:center;padding:20px;
 }
 .lightbox.show{display:flex}
-.lightbox img{max-width:90vw;max-height:80vh;border:2px solid #D4AF37;border-radius:6px;box-shadow:0 12px 50px rgba(0,0,0,.6)}
+.lightbox img{width:auto;height:auto;max-width:min(92vw,560px);max-height:82vh;border:2px solid #D4AF37;border-radius:6px;box-shadow:0 12px 50px rgba(0,0,0,.6);image-rendering:auto;background:#F3E7C8}
 .lightbox .lb-tip{position:absolute;bottom:20px;color:#D4AF37;font-size:12px;letter-spacing:1px;opacity:.7;pointer-events:none}
 .side-panel.open{display:block;animation:slideIn .3s ease}
 @keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -812,6 +813,8 @@ function getLayerOfPoint(id){
    ============================================================ */
 function typeEmoji(t){return {建筑:'🏛️',生活:'🏘️',美食:'🍜',自然:'🌳',事件:'📜',艺术:'🎨',人物:'👤'}[t]||'📍';}
 function pointImagePath(id){return 'images/points/'+id+'.png';}
+/* 照片加载完成后淡入显示 */
+window.fitPhoto=function(el){el.classList.add('loaded');};
 function openSidePanel(id){
   var p=findPointById(id);if(!p)return;
   var r=findRouteOfPoint(id);
@@ -820,7 +823,7 @@ function openSidePanel(id){
   var imgPath=pointImagePath(p.id);
   var html='<div class="sp-photo" onclick="showLightbox(\''+imgPath+'\')">'+
     '<span class="sp-photo-label">影像档案</span>'+
-    '<img src="'+imgPath+'" alt="'+p.name+'" onload="this.classList.add(\'loaded\')" onerror="this.parentNode.classList.add(\'error\')">'+
+    '<img src="'+imgPath+'" alt="'+p.name+'" onload="fitPhoto(this)" onerror="this.parentNode.classList.add(\'error\')">'+
     '<div class="sp-fallback"><span class="sf-emoji">'+typeEmoji(p.type)+'</span><span class="sf-text">暂无影像档案</span></div>'+
     '</div>';
   html+='<div><span class="sp-tag" style="background:'+r.color+'">'+GAME_TYPES[p.game]+'</span><span class="sp-id">'+p.id+'</span></div>';
@@ -1145,7 +1148,13 @@ function init(){
 function showLightbox(src){
   var lb=document.getElementById('lightbox');
   if(!lb)return;
-  lb.querySelector('img').src=src;
+  var img=lb.querySelector('img');
+  img.style.maxWidth='';
+  img.onload=function(){
+    var nat=this.naturalWidth;
+    if(nat){this.style.maxWidth=Math.min(560,Math.max(nat,Math.round(nat*2.2)))+'px';}
+  };
+  img.src=src;
   lb.classList.add('show');
 }
 function closeLightbox(){
